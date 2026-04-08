@@ -9,7 +9,7 @@ import org.springframework.web.servlet.function.RouterFunction;
 import org.springframework.web.servlet.function.ServerResponse;
 import org.springframework.cloud.gateway.server.mvc.handler.HandlerFunctions;
 
-import static org.springframework.cloud.gateway.server.mvc.filter.BeforeFilterFunctions.uri;
+import static org.springframework.cloud.gateway.server.mvc.filter.LoadBalancerFilterFunctions.lb;
 import static org.springframework.cloud.gateway.server.mvc.handler.GatewayRouterFunctions.route;
 
 @Configuration
@@ -19,12 +19,12 @@ public class GatewayConfig {
     public RouterFunction<ServerResponse> gatewayRoutes(AuthenticationFilter authFilter) {
         return route("auth-service")
                 .route(GatewayRequestPredicates.path("/api/auth/**"), HandlerFunctions.http())
-                .before(uri("http://localhost:8081"))
+                .filter(lb("auth-service"))
                 .build()
                 .and(GatewayRouterFunctions.route("course-service")
                         .route(GatewayRequestPredicates.path("/api/courses/**"), HandlerFunctions.http())
                         .filter(authFilter)
-                        .before(uri("http://localhost:8082"))
+                        .filter(lb("course-service"))
                         .build());
     }
 }
