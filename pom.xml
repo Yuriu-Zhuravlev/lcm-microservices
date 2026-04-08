@@ -21,6 +21,7 @@
         <module>common-dto</module>
         <module>auth-service</module>
         <module>api-gateway</module>
+        <module>course-service</module>
     </modules>
 
     <properties>
