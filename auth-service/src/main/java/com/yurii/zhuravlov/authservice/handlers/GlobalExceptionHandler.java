@@ -1,6 +1,8 @@
 package com.yurii.zhuravlov.authservice.handlers;
 
 import com.yurii.zhuravlov.authservice.exceptions.UserAlreadyExists;
+import com.yurii.zhuravlov.errors.ErrorResponse;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -11,12 +13,26 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(BadCredentialsException.class)
-    public ResponseEntity<String> handleBadCredentials(BadCredentialsException e) {
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Incorrect login or password");
+    public ResponseEntity<ErrorResponse> handleBadCredentials(BadCredentialsException e, HttpServletRequest request) {
+        ErrorResponse error = new ErrorResponse(
+                "Bad Credentials",
+                "Incorrect login or password",
+                request.getRequestURI(),
+                HttpStatus.UNAUTHORIZED.value()
+        );
+
+        return new ResponseEntity<>(error, HttpStatus.UNAUTHORIZED);
     }
 
     @ExceptionHandler(UserAlreadyExists.class)
-    public ResponseEntity<String> handleUserExists(UserAlreadyExists e) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+    public ResponseEntity<ErrorResponse> handleUserExists(UserAlreadyExists e, HttpServletRequest request) {
+        ErrorResponse error = new ErrorResponse(
+                "User Already Exists",
+                e.getMessage(),
+                request.getRequestURI(),
+                HttpStatus.BAD_REQUEST.value()
+        );
+
+        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
     }
 }
