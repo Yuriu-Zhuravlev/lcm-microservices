@@ -1,6 +1,7 @@
 package com.yurii.zhuravlov.authservice.handlers;
 
 import com.yurii.zhuravlov.authservice.exceptions.UserAlreadyExists;
+import com.yurii.zhuravlov.authservice.exceptions.UserNotFound;
 import com.yurii.zhuravlov.errors.ErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
@@ -28,6 +29,18 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleUserExists(UserAlreadyExists e, HttpServletRequest request) {
         ErrorResponse error = new ErrorResponse(
                 "User Already Exists",
+                e.getMessage(),
+                request.getRequestURI(),
+                HttpStatus.BAD_REQUEST.value()
+        );
+
+        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(UserNotFound.class)
+    public ResponseEntity<ErrorResponse> handleUserNotExists(UserNotFound e, HttpServletRequest request) {
+        ErrorResponse error = new ErrorResponse(
+                "User not found",
                 e.getMessage(),
                 request.getRequestURI(),
                 HttpStatus.BAD_REQUEST.value()

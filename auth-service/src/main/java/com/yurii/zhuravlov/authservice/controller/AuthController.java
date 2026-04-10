@@ -1,10 +1,12 @@
 package com.yurii.zhuravlov.authservice.controller;
 
+import com.yurii.zhuravlov.authservice.entities.User;
 import com.yurii.zhuravlov.authservice.service.AuthService;
 import com.yurii.zhuravlov.authservice.service.JwtService;
 import com.yurii.zhuravlov.requests.LoginRequest;
 import com.yurii.zhuravlov.requests.RegistrationRequest;
 import com.yurii.zhuravlov.responses.AuthResponse;
+import com.yurii.zhuravlov.responses.UserResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -42,5 +44,11 @@ public class AuthController {
         Long userId = jwtService.extractUserId(token);
 
         return ResponseEntity.ok("Hi, " + username + "! Your ID from token: " + userId);
+    }
+
+    @GetMapping("/users/{id}")
+    public UserResponse getUserById(@PathVariable("id") Long id) {
+        User user = authService.getUserById(id);
+        return new UserResponse(user.getId(), user.getUsername());
     }
 }
