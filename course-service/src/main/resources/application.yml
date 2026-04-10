@@ -5,9 +5,35 @@ spring:
   application:
     name: course-service
 
+  datasource:
+    url: jdbc:postgresql://localhost:5433/lms_db?currentSchema=courses_schema&options=-c timezone=UTC
+    username: user
+    password: password
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        default_schema: courses_schema
+        format_sql: true
+    show-sql: true
+
+  flyway:
+    enabled: true
+    schemas: courses_schema
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
 eureka:
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka/
     register-with-eureka: true
     fetch-registry: true
+
+logging:
+  level:
+    org.hibernate.SQL: DEBUG
+    org.hibernate.orm.jdbc.bind: TRACE
