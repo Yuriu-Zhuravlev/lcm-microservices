@@ -6,6 +6,7 @@ import com.yurii.zhuravlov.courseservice.service.CourseService;
 import com.yurii.zhuravlov.requests.CourseRequest;
 import com.yurii.zhuravlov.responses.CourseResponse;
 import com.yurii.zhuravlov.responses.UserResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -29,8 +30,10 @@ public class CourseController {
     }
 
     @PostMapping
-    public ResponseEntity<CourseResponse> createCourse(@RequestHeader(value = "X-User-Id") String userId
-            , @RequestBody CourseRequest courseRequest){
+    public ResponseEntity<CourseResponse> createCourse(
+            @RequestHeader(value = "X-User-Id") String userId,
+            @Valid @RequestBody CourseRequest courseRequest
+    ){
         Course course = courseService.createCourse(courseRequest.title(), courseRequest.description(), userId);
         CourseResponse response = mapToResponse(course);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
@@ -52,7 +55,7 @@ public class CourseController {
     public CourseResponse updateCourse(
             @PathVariable Long id,
             @RequestHeader("X-User-Id") Long userId,
-            @RequestBody CourseRequest request) {
+            @Valid @RequestBody CourseRequest request) {
         return mapToResponse(courseService.updateCourse(id, request.title(), request.description(), userId));
     }
 
