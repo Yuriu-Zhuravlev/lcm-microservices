@@ -1,7 +1,6 @@
 package com.yurii.zhuravlov.authservice.service;
 
 import com.yurii.zhuravlov.authservice.entities.User;
-import com.yurii.zhuravlov.authservice.exceptions.AuthServiceException;
 import com.yurii.zhuravlov.authservice.exceptions.UserAlreadyExists;
 import com.yurii.zhuravlov.authservice.exceptions.UserNotFound;
 import com.yurii.zhuravlov.authservice.repository.UserRepository;
@@ -44,7 +43,7 @@ public class AuthService {
         );
         CustomUserDetails user = (CustomUserDetails) authentication.getPrincipal();
         if (user == null){
-            throw new AuthServiceException("User is null");
+            throw new UserNotFound("User not found");
         }
         return jwtService.generateToken(user);
     }
