@@ -24,21 +24,7 @@ public class CourseController {
     @GetMapping
     public List<CourseResponse> getAllCourses() {
         return courseService.getAll().stream()
-                .map(course -> {
-                            UserResponse user;
-                            try {
-                                user = authClient.getUserById(course.getAuthorId());
-                            } catch (Exception e) {
-                                user = new UserResponse(course.getAuthorId(), "Unknown");
-                            }
-                            return new CourseResponse(
-                                    course.getId(),
-                                    course.getTitle(),
-                                    course.getDescription(),
-                                    user
-                            );
-                        }
-                )
+                .map(this::mapToResponse)
                 .toList();
     }
 
@@ -46,9 +32,45 @@ public class CourseController {
     public ResponseEntity<CourseResponse> createCourse(@RequestHeader(value = "X-User-Id") String userId
             , @RequestBody CourseRequest courseRequest){
         Course course = courseService.createCourse(courseRequest.title(), courseRequest.description(), userId);
-        UserResponse user = authClient.getUserById(course.getAuthorId());
-        CourseResponse response = new CourseResponse(course.getId(), course.getTitle()
-                ,course.getDescription(), user);
+        CourseResponse response = mapToResponse(course);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @GetMapping("/my")
+    public List<CourseResponse> getMyCourses(@RequestHeader("X-User-Id") Long userId) {
+        return courseService.getCoursesByAuthor(userId).stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    @GetMapping("/{id}")
+    public CourseResponse getCourseById(@PathVariable Long id){
+        return mapToResponse(courseService.getCourseById(id));
+    }
+
+    @PutMapping("/{id}")
+    public CourseResponse updateCourse(
+            @PathVariable Long id,
+            @RequestHeader("X-User-Id") Long userId,
+            @RequestBody CourseRequest request) {
+        return mapToResponse(courseService.updateCourse(id, request.title(), request.description(), userId));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteCourse(
+            @PathVariable Long id,
+            @RequestHeader("X-User-Id") Long userId) {
+        courseService.deleteCourse(id, userId);
+        return ResponseEntity.noContent().build();
+    }
+
+    private CourseResponse mapToResponse(Course course) {
+        UserResponse user;
+        try {
+            user = authClient.getUserById(course.getAuthorId());
+        } catch (Exception e) {
+            user = new UserResponse(course.getAuthorId(), "Unknown");
+        }
+        return new CourseResponse(course.getId(), course.getTitle(), course.getDescription(), user);
     }
 }
