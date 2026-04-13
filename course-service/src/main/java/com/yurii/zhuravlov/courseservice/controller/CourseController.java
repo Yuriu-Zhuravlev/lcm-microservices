@@ -10,9 +10,11 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Objects;
 
 @RestController
 @RequestMapping("/api/courses")
@@ -31,16 +33,17 @@ public class CourseController {
 
     @PostMapping
     public ResponseEntity<CourseResponse> createCourse(
-            @RequestHeader(value = "X-User-Id") String userId,
             @Valid @RequestBody CourseRequest courseRequest
     ){
+        Long userId = (Long) Objects.requireNonNull(SecurityContextHolder.getContext().getAuthentication()).getDetails();
         Course course = courseService.createCourse(courseRequest.title(), courseRequest.description(), userId);
         CourseResponse response = mapToResponse(course);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @GetMapping("/my")
-    public List<CourseResponse> getMyCourses(@RequestHeader("X-User-Id") Long userId) {
+    public List<CourseResponse> getMyCourses() {
+        Long userId = (Long) Objects.requireNonNull(SecurityContextHolder.getContext().getAuthentication()).getDetails();
         return courseService.getCoursesByAuthor(userId).stream()
                 .map(this::mapToResponse)
                 .toList();
@@ -54,15 +57,14 @@ public class CourseController {
     @PutMapping("/{id}")
     public CourseResponse updateCourse(
             @PathVariable Long id,
-            @RequestHeader("X-User-Id") Long userId,
             @Valid @RequestBody CourseRequest request) {
+        Long userId = (Long) Objects.requireNonNull(SecurityContextHolder.getContext().getAuthentication()).getDetails();
         return mapToResponse(courseService.updateCourse(id, request.title(), request.description(), userId));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteCourse(
-            @PathVariable Long id,
-            @RequestHeader("X-User-Id") Long userId) {
+    public ResponseEntity<Void> deleteCourse(@PathVariable Long id) {
+        Long userId = (Long) Objects.requireNonNull(SecurityContextHolder.getContext().getAuthentication()).getDetails();
         courseService.deleteCourse(id, userId);
         return ResponseEntity.noContent().build();
     }

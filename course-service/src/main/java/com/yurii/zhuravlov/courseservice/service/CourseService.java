@@ -15,11 +15,11 @@ import java.util.List;
 public class CourseService {
     private final CourseRepository repository;
 
-    public Course createCourse(String title, String description, String authorId) {
+    public Course createCourse(String title, String description, Long authorId) {
         return repository.save(Course.builder()
                 .title(title)
                 .description(description)
-                .authorId(Long.parseLong(authorId))
+                .authorId(authorId)
                 .build());
     }
 
