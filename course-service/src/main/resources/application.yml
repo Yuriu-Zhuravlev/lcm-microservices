@@ -1,5 +1,6 @@
 server:
   port: 8082
+  forward-headers-strategy: framework
 
 spring:
   application:
@@ -32,6 +33,8 @@ eureka:
       defaultZone: http://localhost:8761/eureka/
     register-with-eureka: true
     fetch-registry: true
+  instance:
+    prefer-ip-address: true
 
 logging:
   level:
@@ -41,3 +44,11 @@ logging:
 jwt:
   secret: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
   expiration: 86400000
+
+springdoc:
+  api-docs:
+    enabled: true
+    path: /api/courses/v3/api-docs
+  swagger-ui:
+    enabled: true
+    path: /api/courses/swagger-ui.html

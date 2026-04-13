@@ -1,5 +1,6 @@
 server:
   port: 8080
+  forward-headers-strategy: framework
 
 spring:
   application:
@@ -15,6 +16,8 @@ eureka:
       defaultZone: http://localhost:8761/eureka/
     fetch-registry: true
     register-with-eureka: true
+  instance:
+    prefer-ip-address: true
 
 jwt:
   secret: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
@@ -23,3 +26,17 @@ logging:
   level:
     org.springframework.cloud.gateway: TRACE
     org.springframework.web: DEBUG
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+    disable-swagger-default-url: true
+    urls:
+      - name: Auth Service
+        url: /api/auth/v3/api-docs
+      - name: Course Service
+        url: /api/courses/v3/api-docs
+  api-docs:
+    path: /v3/api-docs
+    enabled: true

@@ -21,5 +21,5 @@ public class Course {
     private String description;
 
     @Column(nullable = false)
-    private Long authorId; // ID з auth-service
+    private Long authorId;
 }

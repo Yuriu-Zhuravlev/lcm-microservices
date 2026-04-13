@@ -24,6 +24,12 @@ public class SecurityConfig {
     private final String[] publicEndpoints = {
             "/api/auth/register"
             ,"/api/auth/login"
+            ,"/v3/api-docs/**"
+            ,"/swagger-ui/**"
+            ,"/swagger-ui.html"
+            ,"/api/auth/v3/api-docs/**"
+            ,"/api/auth/swagger-ui/**"
+            ,"/api/auth/swagger-ui.html"
     };
 
     @Bean
