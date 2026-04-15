@@ -1,9 +1,15 @@
 package com.yurii.zhuravlov.courseservice.service;
 
+import com.yurii.zhuravlov.courseservice.client.AuthClient;
 import com.yurii.zhuravlov.courseservice.exception.CourseNotFoundException;
-import com.yurii.zhuravlov.courseservice.exception.NotAnAuthor;
+import com.yurii.zhuravlov.courseservice.exception.NotAnAuthorException;
 import com.yurii.zhuravlov.courseservice.model.Course;
 import com.yurii.zhuravlov.courseservice.repo.CourseRepository;
+import com.yurii.zhuravlov.courseservice.utils.MappingUtils;
+import com.yurii.zhuravlov.requests.CourseRequest;
+import com.yurii.zhuravlov.responses.CourseResponseFull;
+import com.yurii.zhuravlov.responses.CourseResponseShort;
+import com.yurii.zhuravlov.responses.UserResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,40 +20,69 @@ import java.util.List;
 @RequiredArgsConstructor
 public class CourseService {
     private final CourseRepository repository;
+    private final AuthClient authClient;
 
-    public Course createCourse(String title, String description, Long authorId) {
-        return repository.save(Course.builder()
-                .title(title)
-                .description(description)
+
+    public CourseResponseShort createCourse(CourseRequest courseRequest, Long authorId) {
+        Course created = repository.save(Course.builder()
+                .title(courseRequest.title())
+                .description(courseRequest.description())
                 .authorId(authorId)
                 .build());
+        UserResponse user = getUserResponse(created.getAuthorId());
+        return MappingUtils.toCourseShortDTO(created, user);
     }
 
-    public List<Course> getAll() {
-        return repository.findAll();
+    private UserResponse getUserResponse(Long id) {
+        UserResponse user;
+        try {
+            user = authClient.getUserById(id);
+        } catch (Exception e) {
+            user = new UserResponse(id, "Unknown");
+        }
+        return user;
     }
 
-    public Course getCourseById(Long id){
-        return repository.findById(id).orElseThrow(CourseNotFoundException::new);
-    }
-
-    public List<Course> getCoursesByAuthor(Long authorId) {
-        return repository.findByAuthorId(authorId);
+    public List<CourseResponseShort> getAll() {
+        return repository.findAll().stream()
+                .map(course -> {
+                    UserResponse userResponse = getUserResponse(course.getAuthorId());
+                    return MappingUtils.toCourseShortDTO(course, userResponse);
+                }).toList();
     }
 
     @Transactional
-    public Course updateCourse(Long courseId, String title, String description, Long authorId) {
+    public CourseResponseFull getCourseById(Long id){
+        return repository.findById(id)
+                .map(course -> {
+                    UserResponse userResponse = getUserResponse(course.getAuthorId());
+                    return MappingUtils.toCourseFullDTO(course, userResponse);
+                })
+                .orElseThrow(CourseNotFoundException::new);
+    }
+
+    public List<CourseResponseShort> getCoursesByAuthor(Long authorId) {
+        return repository.findByAuthorId(authorId).stream().map(course -> {
+            UserResponse userResponse = getUserResponse(course.getAuthorId());
+            return MappingUtils.toCourseShortDTO(course, userResponse);
+        }).toList();
+    }
+
+    @Transactional
+    public CourseResponseShort updateCourse(Long courseId, CourseRequest request, Long authorId) {
         Course course = repository.findById(courseId)
                 .orElseThrow(CourseNotFoundException::new);
 
         // Перевірка власності
         if (!course.getAuthorId().equals(authorId)) {
-            throw new NotAnAuthor();
+            throw new NotAnAuthorException();
         }
 
-        course.setTitle(title);
-        course.setDescription(description);
-        return repository.save(course);
+        course.setTitle(request.title());
+        course.setDescription(request.description());
+        course = repository.save(course);
+        UserResponse userResponse = getUserResponse(course.getAuthorId());
+        return MappingUtils.toCourseShortDTO(course, userResponse);
     }
 
     @Transactional
@@ -56,7 +91,7 @@ public class CourseService {
                 .orElseThrow(CourseNotFoundException::new);
 
         if (!course.getAuthorId().equals(authorId)) {
-            throw new NotAnAuthor();
+            throw new NotAnAuthorException();
         }
 
         repository.delete(course);

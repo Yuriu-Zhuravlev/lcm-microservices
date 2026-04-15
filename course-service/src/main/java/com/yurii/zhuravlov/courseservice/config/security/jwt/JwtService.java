@@ -1,4 +1,4 @@
-package com.yurii.zhuravlov.courseservice.jwt;
+package com.yurii.zhuravlov.courseservice.config.security.jwt;
 
 import com.yurii.zhuravlov.jwt.AbstractJwtService;
 import org.springframework.beans.factory.annotation.Value;

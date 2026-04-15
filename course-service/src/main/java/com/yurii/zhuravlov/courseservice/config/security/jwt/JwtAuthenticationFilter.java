@@ -1,6 +1,5 @@
-package com.yurii.zhuravlov.courseservice.config;
+package com.yurii.zhuravlov.courseservice.config.security.jwt;
 
-import com.yurii.zhuravlov.courseservice.jwt.JwtService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -27,7 +26,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     @NonNull FilterChain filterChain) throws ServletException, IOException {
 
         String path = request.getServletPath();
-        // Якщо шлях веде до документації — пропускаємо запит без перевірки токена
         if (path.contains("/v3/api-docs") || path.contains("/swagger-ui")) {
             filterChain.doFilter(request, response);
             return;
