@@ -3,6 +3,9 @@ package com.yurii.zhuravlov.courseservice.model;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Table(name = "courses", schema = "courses_schema")
 @Getter @Setter
@@ -22,4 +25,8 @@ public class Course {
 
     @Column(nullable = false)
     private Long authorId;
+
+    @OneToMany(mappedBy = "course", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Lesson> lessons = new ArrayList<>();
+
 }

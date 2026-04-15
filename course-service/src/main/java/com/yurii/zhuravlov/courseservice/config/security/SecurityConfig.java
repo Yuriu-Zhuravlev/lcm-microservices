@@ -1,5 +1,6 @@
-package com.yurii.zhuravlov.courseservice.config;
+package com.yurii.zhuravlov.courseservice.config.security;
 
+import com.yurii.zhuravlov.courseservice.config.security.jwt.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

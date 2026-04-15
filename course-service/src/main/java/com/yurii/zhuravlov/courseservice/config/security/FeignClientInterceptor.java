@@ -1,4 +1,4 @@
-package com.yurii.zhuravlov.courseservice.config;
+package com.yurii.zhuravlov.courseservice.config.security;
 
 import feign.RequestInterceptor;
 import feign.RequestTemplate;
