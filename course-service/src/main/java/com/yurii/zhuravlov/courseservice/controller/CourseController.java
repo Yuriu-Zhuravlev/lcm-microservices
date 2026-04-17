@@ -44,6 +44,11 @@ public class CourseController {
         return courseService.getCourseById(id);
     }
 
+    @GetMapping("/short/{id}")
+    public CourseResponseShort getCourseShortById(@PathVariable Long id){
+        return courseService.getCourseShortById(id);
+    }
+
     @PutMapping("/{id}")
     public CourseResponseShort updateCourse(
             @PathVariable Long id,

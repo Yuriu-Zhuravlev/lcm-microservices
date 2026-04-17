@@ -61,6 +61,16 @@ public class CourseService {
                 .orElseThrow(CourseNotFoundException::new);
     }
 
+    @Transactional
+    public CourseResponseShort getCourseShortById(Long id){
+        return repository.findById(id)
+                .map(course -> {
+                    UserResponse userResponse = getUserResponse(course.getAuthorId());
+                    return MappingUtils.toCourseShortDTO(course, userResponse);
+                })
+                .orElseThrow(CourseNotFoundException::new);
+    }
+
     public List<CourseResponseShort> getCoursesByAuthor(Long authorId) {
         return repository.findByAuthorId(authorId).stream().map(course -> {
             UserResponse userResponse = getUserResponse(course.getAuthorId());
