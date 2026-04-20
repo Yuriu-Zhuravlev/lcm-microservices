@@ -25,6 +25,11 @@ public class CourseController {
         return courseService.getAll();
     }
 
+    @GetMapping("/byIds")
+    public List<CourseResponseShort> getAllCoursesByIds(@RequestParam List<Long> ids) {
+        return courseService.findByIds(ids);
+    }
+
     @PostMapping
     public ResponseEntity<CourseResponseShort> createCourse(
             @Valid @RequestBody CourseRequest courseRequest,

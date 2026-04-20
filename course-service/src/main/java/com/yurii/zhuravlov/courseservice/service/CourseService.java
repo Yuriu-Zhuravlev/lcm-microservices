@@ -15,6 +15,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -105,5 +109,19 @@ public class CourseService {
         }
 
         repository.delete(course);
+    }
+
+    public List<CourseResponseShort> findByIds(List<Long> courseIds){
+        List<Course> courses = repository.findAllById(courseIds);
+        Set<UserResponse> userResponses = authClient.getUsersByIds(
+                courses.stream().map(Course::getAuthorId).collect(Collectors.toSet())
+        );
+        Map<Long, UserResponse> userMap = userResponses.stream()
+                .collect(Collectors.toMap(UserResponse::id, Function.identity()));
+        return courses.stream().map(course -> {
+            UserResponse userResponse = userMap.getOrDefault(course.getAuthorId(),
+                    new UserResponse(course.getAuthorId(), "Unknown"));
+            return MappingUtils.toCourseShortDTO(course, userResponse);
+        }).toList();
     }
 }

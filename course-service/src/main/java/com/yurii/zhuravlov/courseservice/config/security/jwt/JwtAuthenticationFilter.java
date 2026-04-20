@@ -31,6 +31,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
+        String internalHeader = request.getHeader("X-Internal-Service");
+
+        if (request.getRequestURI().contains("/internal/") && !"learning-service".equals(internalHeader)) {
+            response.sendError(HttpServletResponse.SC_FORBIDDEN, "Direct access not allowed");
+            return;
+        }
+
         String authHeader = request.getHeader("Authorization");
 
         if (authHeader != null && authHeader.startsWith("Bearer ")) {

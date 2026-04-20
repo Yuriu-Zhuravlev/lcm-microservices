@@ -13,6 +13,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Set;
+
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
@@ -50,5 +52,10 @@ public class AuthController {
     public UserResponse getUserById(@PathVariable("id") Long id) {
         User user = authService.getUserById(id);
         return new UserResponse(user.getId(), user.getUsername());
+    }
+
+    @GetMapping("/users")
+    public Set<UserResponse> getUsersByIds(@RequestParam Set<Long> ids){
+        return authService.findUsersByIds(ids);
     }
 }

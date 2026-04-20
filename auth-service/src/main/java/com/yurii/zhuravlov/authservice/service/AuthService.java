@@ -7,6 +7,7 @@ import com.yurii.zhuravlov.authservice.repository.UserRepository;
 import com.yurii.zhuravlov.authservice.service.userdetails.CustomUserDetails;
 import com.yurii.zhuravlov.requests.LoginRequest;
 import com.yurii.zhuravlov.requests.RegistrationRequest;
+import com.yurii.zhuravlov.responses.UserResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -14,6 +15,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -50,5 +52,11 @@ public class AuthService {
 
     public User getUserById(Long id){
         return userRepository.findById(id).orElseThrow(() -> new UserNotFound("User not found"));
+    }
+
+    public Set<UserResponse> findUsersByIds(Set<Long> userIds){
+        return userRepository.findAllById(userIds).stream()
+                .map(user -> new UserResponse(user.getId(), user.getUsername()))
+                .collect(Collectors.toSet());
     }
 }

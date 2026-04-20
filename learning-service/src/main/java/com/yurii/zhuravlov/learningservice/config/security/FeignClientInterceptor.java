@@ -22,5 +22,7 @@ public class FeignClientInterceptor implements RequestInterceptor {
                 template.header("Authorization", authorizationHeader);
             }
         }
+
+        template.header("X-Internal-Service", "learning-service");
     }
 }
