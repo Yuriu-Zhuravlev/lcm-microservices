@@ -10,8 +10,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
 @RestController
 @RequestMapping("/api/courses/questions")
 @RequiredArgsConstructor
@@ -42,15 +40,5 @@ public class QuestionController {
             @CurrentUser Long userId) {
         questionService.deleteQuestion(id, userId);
         return ResponseEntity.noContent().build();
-    }
-
-    @GetMapping("/{id}")
-    public QuestionResponse getQuestion(@PathVariable Long id) {
-        return questionService.getById(id);
-    }
-
-    @GetMapping("/lesson/{lessonId}")
-    public List<QuestionResponse> getQuestionsByLesson(@PathVariable Long lessonId) {
-        return questionService.getByLessonId(lessonId);
     }
 }

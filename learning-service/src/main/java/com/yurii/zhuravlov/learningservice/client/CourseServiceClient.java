@@ -10,11 +10,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
 
-@FeignClient(name = "course-service") // Назва сервісу з Eureka
+@FeignClient(name = "course-service")
 public interface CourseServiceClient {
 
-    @GetMapping("/api/courses/lessons/{id}")
-    LessonResponseFull getLessonById(@PathVariable Long id);
+    @GetMapping("/api/courses/lessons/internal/{id}")
+    LessonResponseFull getLessonByIdInternal(@PathVariable Long id);
 
     @GetMapping("/api/courses/{courseId}")
     CourseResponseFull getCourseById(@PathVariable Long courseId);

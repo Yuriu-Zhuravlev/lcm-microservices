@@ -1,7 +1,8 @@
 package com.yurii.zhuravlov.responses;
 
-import lombok.Builder;
+import com.fasterxml.jackson.annotation.JsonInclude;
 
-@Builder
-public record OptionResponse(String text, boolean isCorrect) {
-}
+public record OptionResponse(
+        String text,
+        @JsonInclude(JsonInclude.Include.NON_NULL) Boolean isCorrect
+) {}

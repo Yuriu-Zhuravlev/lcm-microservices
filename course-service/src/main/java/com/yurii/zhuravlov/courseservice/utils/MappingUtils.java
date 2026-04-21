@@ -40,32 +40,43 @@ public class MappingUtils {
                 .build();
     }
 
-    public static LessonResponseFull toLessonFullDto(Lesson lesson) {
+    public static LessonResponseFull toLessonFullDto(Lesson lesson, boolean full) {
         return LessonResponseFull.builder()
                 .id(lesson.getId())
                 .title(lesson.getTitle())
                 .htmlContent(lesson.getHtmlContent())
                 .orderIndex(lesson.getOrderIndex())
                 .questions(lesson.getQuestions().stream()
-                        .map(MappingUtils::toQuestionDto)
+                        .map(question -> MappingUtils.toQuestionDto(question, full))
                         .toList())
+                .courseId(lesson.getCourse().getId())
                 .build();
     }
 
 
-    public static QuestionResponse toQuestionDto(Question question) {
+    public static QuestionResponse toQuestionDto(Question question, boolean full) {
         return QuestionResponse.builder()
                 .id(question.getId())
                 .text(question.getText())
                 .options(question.getOptions().entrySet().stream()
                         .collect(Collectors.toMap(
                                 Map.Entry::getKey,
-                                entry -> toOptionDto(entry.getValue())
-                        )))
+                                entry -> {
+                                    if (full) {
+                                        return toOptionDto(entry.getValue());
+                                    } else {
+                                        return toOptionShortDto(entry.getValue());
+                                    }
+                                })
+                        ))
                 .build();
     }
 
     private static OptionResponse toOptionDto(Option option) {
         return new OptionResponse(option.getText(), option.isCorrect());
+    }
+
+    private static OptionResponse toOptionShortDto(Option option) {
+        return new OptionResponse(option.getText(), null);
     }
 }

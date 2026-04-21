@@ -22,10 +22,21 @@ public class LessonService {
     private final CourseRepository courseRepository;
 
     @Transactional
-    public LessonResponseFull getLessonById(Long id){
-        return lessonRepository.findById(id)
-                .map(MappingUtils::toLessonFullDto)
-                .orElseThrow(LessonNotFoundException::new);
+    public LessonResponseFull getLessonById(Long id, Long userId){
+        Lesson lesson = lessonRepository.findById(id).orElseThrow(LessonNotFoundException::new);
+
+        if (!lesson.getCourse().getAuthorId().equals(userId)) {
+            throw new NotAnAuthorException();
+        }
+
+        return MappingUtils.toLessonFullDto(lesson, true);
+    }
+
+    @Transactional
+    public LessonResponseFull getLessonByIdInternal(Long id){
+        Lesson lesson = lessonRepository.findById(id).orElseThrow(LessonNotFoundException::new);
+
+        return MappingUtils.toLessonFullDto(lesson, false);
     }
 
     @Transactional
@@ -42,7 +53,7 @@ public class LessonService {
                 .course(course)
                 .orderIndex(lessonRequest.orderIndex())
                 .build()
-        ));
+        ), true);
     }
 
     @Transactional
@@ -60,7 +71,7 @@ public class LessonService {
 
         lesson = lessonRepository.save(lesson);
 
-        return MappingUtils.toLessonFullDto(lesson);
+        return MappingUtils.toLessonFullDto(lesson, true);
     }
 
     @Transactional

@@ -15,8 +15,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-
 @Service
 @RequiredArgsConstructor
 public class QuestionService {
@@ -41,7 +39,7 @@ public class QuestionService {
                         .toList()
         );
 
-        return MappingUtils.toQuestionDto(questionRepository.save(question));
+        return MappingUtils.toQuestionDto(questionRepository.save(question), true);
     }
 
 
@@ -60,7 +58,7 @@ public class QuestionService {
                         )
                         .toList()
         );
-        return MappingUtils.toQuestionDto(questionRepository.save(question));
+        return MappingUtils.toQuestionDto(questionRepository.save(question), true);
     }
 
     @Transactional
@@ -73,18 +71,5 @@ public class QuestionService {
         }
 
         questionRepository.delete(question);
-    }
-
-    public QuestionResponse getById(Long questionId){
-        return MappingUtils.toQuestionDto(
-                questionRepository.findById(questionId)
-                        .orElseThrow(QuestionNotFoundException::new)
-        );
-    }
-
-    public List<QuestionResponse> getByLessonId(Long lessonId){
-        return questionRepository.findByLessonId(lessonId)
-                .stream().map(MappingUtils::toQuestionDto)
-                .toList();
     }
 }
