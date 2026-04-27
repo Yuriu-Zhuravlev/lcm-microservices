@@ -5,15 +5,20 @@ import com.yurii.zhuravlov.courseservice.exception.LessonNotFoundException;
 import com.yurii.zhuravlov.courseservice.exception.NotAnAuthorException;
 import com.yurii.zhuravlov.courseservice.model.Course;
 import com.yurii.zhuravlov.courseservice.model.Lesson;
+import com.yurii.zhuravlov.courseservice.model.Question;
 import com.yurii.zhuravlov.courseservice.repo.CourseRepository;
 import com.yurii.zhuravlov.courseservice.repo.LessonRepository;
 import com.yurii.zhuravlov.courseservice.utils.MappingUtils;
 import com.yurii.zhuravlov.requests.LessonCreteRequest;
 import com.yurii.zhuravlov.requests.LessonUpdateRequest;
 import com.yurii.zhuravlov.responses.LessonResponseFull;
+import com.yurii.zhuravlov.responses.QuizCorrectAnswersResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -84,5 +89,28 @@ public class LessonService {
         }
 
         lessonRepository.delete(lesson);
+    }
+
+    @Transactional(readOnly = true)
+    public QuizCorrectAnswersResponse getCorrectAnswers(Long lessonId) {
+        Lesson lesson = lessonRepository.findById(lessonId)
+                .orElseThrow(() -> new LessonNotFoundException("Lesson not found"));
+
+        Map<Long, Character> correctAnswers = lesson.getQuestions().stream()
+                .collect(Collectors.toMap(
+                        Question::getId,
+                        question -> question.getOptions().entrySet().stream()
+                                .filter(entry -> entry.getValue().isCorrect())
+                                .map(Map.Entry::getKey)
+                                .findFirst()
+                                .orElseThrow(() -> new IllegalStateException(
+                                        "Question " + question.getId() + " has no correct option"))
+                ));
+
+        return QuizCorrectAnswersResponse.builder()
+                .lessonId(lessonId)
+                .courseId(lesson.getCourse().getId())
+                .answers(correctAnswers)
+                .build();
     }
 }

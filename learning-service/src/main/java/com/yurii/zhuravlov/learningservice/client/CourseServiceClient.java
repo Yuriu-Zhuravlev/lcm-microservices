@@ -3,6 +3,7 @@ package com.yurii.zhuravlov.learningservice.client;
 import com.yurii.zhuravlov.responses.CourseResponseFull;
 import com.yurii.zhuravlov.responses.CourseResponseShort;
 import com.yurii.zhuravlov.responses.LessonResponseFull;
+import com.yurii.zhuravlov.responses.QuizCorrectAnswersResponse;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -15,6 +16,9 @@ public interface CourseServiceClient {
 
     @GetMapping("/api/courses/lessons/internal/{id}")
     LessonResponseFull getLessonByIdInternal(@PathVariable Long id);
+
+    @GetMapping("/api/courses/lessons/internal/answers/{id}")
+    QuizCorrectAnswersResponse getCorrectAnswers(@PathVariable Long id);
 
     @GetMapping("/api/courses/{courseId}")
     CourseResponseFull getCourseById(@PathVariable Long courseId);

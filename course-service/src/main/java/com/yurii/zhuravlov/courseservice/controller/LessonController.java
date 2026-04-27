@@ -5,6 +5,7 @@ import com.yurii.zhuravlov.courseservice.service.LessonService;
 import com.yurii.zhuravlov.requests.LessonCreteRequest;
 import com.yurii.zhuravlov.requests.LessonUpdateRequest;
 import com.yurii.zhuravlov.responses.LessonResponseFull;
+import com.yurii.zhuravlov.responses.QuizCorrectAnswersResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -47,6 +48,15 @@ public class LessonController {
             throw new AccessDeniedException("Only internal services allowed");
         }
         return lessonService.getLessonByIdInternal(id);
+    }
+
+    @GetMapping("/internal/answers/{id}")
+    public QuizCorrectAnswersResponse getAnswersById(@PathVariable Long id,
+                                                     @RequestHeader("X-Internal-Service") String internalService){
+        if (!"learning-service".equals(internalService)) {
+            throw new AccessDeniedException("Only internal services allowed");
+        }
+        return lessonService.getCorrectAnswers(id);
     }
 
     @DeleteMapping("/{id}")

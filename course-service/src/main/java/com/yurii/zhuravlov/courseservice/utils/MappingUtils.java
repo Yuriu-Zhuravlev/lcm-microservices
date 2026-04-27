@@ -6,6 +6,7 @@ import com.yurii.zhuravlov.courseservice.model.Option;
 import com.yurii.zhuravlov.courseservice.model.Question;
 import com.yurii.zhuravlov.responses.*;
 
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -20,15 +21,26 @@ public class MappingUtils {
                 .build();
     }
 
+    public static CourseResponseShort toCourseShortDTOWithLessonCount(Course course, UserResponse userResponse){
+        return CourseResponseShort.builder()
+                .id(course.getId())
+                .title(course.getTitle())
+                .description(course.getDescription())
+                .author(userResponse)
+                .totalLessonsCount(course.getLessons() != null ? course.getLessons().size() : 0)
+                .build();
+    }
+
     public static CourseResponseFull toCourseFullDTO(Course course, UserResponse userResponse){
+        List<LessonResponseShort> lessons = course.getLessons() != null ? course.getLessons().stream()
+                .map(MappingUtils::toLessonShortDto)
+                .toList() : null;
         return CourseResponseFull.builder()
                 .id(course.getId())
                 .title(course.getTitle())
                 .description(course.getDescription())
                 .author(userResponse)
-                .lessons(course.getLessons().stream()
-                        .map(MappingUtils::toLessonShortDto)
-                        .toList())
+                .lessons(lessons)
                 .build();
     }
 
@@ -41,14 +53,15 @@ public class MappingUtils {
     }
 
     public static LessonResponseFull toLessonFullDto(Lesson lesson, boolean full) {
+        List<QuestionResponse> questionResponses = lesson.getQuestions() != null ? lesson.getQuestions().stream()
+                .map(question -> MappingUtils.toQuestionDto(question, full))
+                .toList() : null;
         return LessonResponseFull.builder()
                 .id(lesson.getId())
                 .title(lesson.getTitle())
                 .htmlContent(lesson.getHtmlContent())
                 .orderIndex(lesson.getOrderIndex())
-                .questions(lesson.getQuestions().stream()
-                        .map(question -> MappingUtils.toQuestionDto(question, full))
-                        .toList())
+                .questions(questionResponses)
                 .courseId(lesson.getCourse().getId())
                 .build();
     }

@@ -35,6 +35,7 @@ public class EnrollmentService {
                 .courseId(courseId)
                 .status(EnrolmentStatus.ENROLLED)
                 .enrolledAt(LocalDateTime.now())
+                .totalLessonsCount(courseResponseShort.totalLessonsCount())
                 .build();
 
         enrolment = enrolmentRepository.save(enrolment);

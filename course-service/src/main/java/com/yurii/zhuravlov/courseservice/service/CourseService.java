@@ -70,7 +70,7 @@ public class CourseService {
         return repository.findById(id)
                 .map(course -> {
                     UserResponse userResponse = getUserResponse(course.getAuthorId());
-                    return MappingUtils.toCourseShortDTO(course, userResponse);
+                    return MappingUtils.toCourseShortDTOWithLessonCount(course, userResponse);
                 })
                 .orElseThrow(CourseNotFoundException::new);
     }

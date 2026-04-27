@@ -35,6 +35,6 @@ public class Enrolment {
 
     private LocalDateTime completedAt;
 
-    @Builder.Default
-    private Double progress = 0.0;
+    @Column(nullable = false)
+    private Integer totalLessonsCount;
 }
