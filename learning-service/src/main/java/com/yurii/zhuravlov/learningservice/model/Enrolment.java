@@ -5,6 +5,8 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "enrolments", schema = "learning_schema",
@@ -37,4 +39,7 @@ public class Enrolment {
 
     @Column(nullable = false)
     private Integer totalLessonsCount;
+
+    @OneToMany(mappedBy = "enrolment", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<UserLessonProgress> lessonsProgress = new ArrayList<>();
 }

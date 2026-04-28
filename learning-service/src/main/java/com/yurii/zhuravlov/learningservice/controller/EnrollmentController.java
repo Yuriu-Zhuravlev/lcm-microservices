@@ -26,4 +26,9 @@ public class EnrollmentController {
     public List<EnrollmentResponse> getMyEnrollments(@CurrentUser Long userId){
         return enrollmentService.getEnrollmentsByUserId(userId);
     }
+
+    @GetMapping("/{id}")
+    public EnrollmentResponse getEnrollmentById(@PathVariable Long id, @CurrentUser Long userId){
+        return enrollmentService.getEnrollmentById(userId, id);
+    }
 }
