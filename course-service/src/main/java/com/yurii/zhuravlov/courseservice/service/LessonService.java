@@ -6,6 +6,7 @@ import com.yurii.zhuravlov.courseservice.exception.NotAnAuthorException;
 import com.yurii.zhuravlov.courseservice.model.Course;
 import com.yurii.zhuravlov.courseservice.model.Lesson;
 import com.yurii.zhuravlov.courseservice.model.Question;
+import com.yurii.zhuravlov.courseservice.mq.CourseEventPublisher;
 import com.yurii.zhuravlov.courseservice.repo.CourseRepository;
 import com.yurii.zhuravlov.courseservice.repo.LessonRepository;
 import com.yurii.zhuravlov.courseservice.utils.MappingUtils;
@@ -25,6 +26,7 @@ import java.util.stream.Collectors;
 public class LessonService {
     private final LessonRepository lessonRepository;
     private final CourseRepository courseRepository;
+    private final CourseEventPublisher courseEventPublisher;
 
     @Transactional
     public LessonResponseFull getLessonById(Long id, Long userId){
@@ -52,13 +54,18 @@ public class LessonService {
             throw new NotAnAuthorException();
         }
 
-        return MappingUtils.toLessonFullDto(lessonRepository.save(Lesson.builder()
+        Lesson lesson = lessonRepository.save(Lesson.builder()
                 .title(lessonRequest.title())
                 .htmlContent(lessonRequest.htmlContent())
                 .course(course)
                 .orderIndex(lessonRequest.orderIndex())
                 .build()
-        ), true);
+        );
+        int newTotalLessons = lessonRepository.countByCourseId(course.getId());
+
+        courseEventPublisher.publishAddLesson(course.getId(), newTotalLessons);
+
+        return MappingUtils.toLessonFullDto(lesson, true);
     }
 
     @Transactional
@@ -84,11 +91,15 @@ public class LessonService {
         Lesson lesson = lessonRepository.findById(lessonId)
                 .orElseThrow(LessonNotFoundException::new);
 
+        Long courseId = lesson.getCourse().getId();
+
         if (!lesson.getCourse().getAuthorId().equals(userId)) {
             throw new NotAnAuthorException();
         }
 
         lessonRepository.delete(lesson);
+        int newTotalLessons = lessonRepository.countByCourseId(courseId);
+        courseEventPublisher.publishRemoveLesson(courseId, lessonId, newTotalLessons);
     }
 
     @Transactional(readOnly = true)

@@ -6,6 +6,7 @@ import com.yurii.zhuravlov.courseservice.exception.QuestionNotFoundException;
 import com.yurii.zhuravlov.courseservice.model.Lesson;
 import com.yurii.zhuravlov.courseservice.model.Option;
 import com.yurii.zhuravlov.courseservice.model.Question;
+import com.yurii.zhuravlov.courseservice.mq.CourseEventPublisher;
 import com.yurii.zhuravlov.courseservice.repo.LessonRepository;
 import com.yurii.zhuravlov.courseservice.repo.QuestionRepository;
 import com.yurii.zhuravlov.courseservice.utils.MappingUtils;
@@ -20,6 +21,8 @@ import org.springframework.transaction.annotation.Transactional;
 public class QuestionService {
     private final QuestionRepository questionRepository;
     private final LessonRepository lessonRepository;
+    private final CourseEventPublisher courseEventPublisher;
+
 
     @Transactional
     public QuestionResponse createQuestion (QuestionRequest request, Long lessonId, Long userId){
@@ -39,7 +42,11 @@ public class QuestionService {
                         .toList()
         );
 
-        return MappingUtils.toQuestionDto(questionRepository.save(question), true);
+        question = questionRepository.save(question);
+
+        courseEventPublisher.publishUpdateQuiz(lessonId);
+
+        return MappingUtils.toQuestionDto(question, true);
     }
 
 
@@ -58,7 +65,12 @@ public class QuestionService {
                         )
                         .toList()
         );
-        return MappingUtils.toQuestionDto(questionRepository.save(question), true);
+
+        question = questionRepository.save(question);
+
+        courseEventPublisher.publishUpdateQuiz(question.getLesson().getId());
+
+        return MappingUtils.toQuestionDto(question, true);
     }
 
     @Transactional
@@ -71,5 +83,7 @@ public class QuestionService {
         }
 
         questionRepository.delete(question);
+
+        courseEventPublisher.publishUpdateQuiz(question.getLesson().getId());
     }
 }

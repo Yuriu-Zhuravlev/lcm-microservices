@@ -4,6 +4,7 @@ import com.yurii.zhuravlov.courseservice.client.AuthClient;
 import com.yurii.zhuravlov.courseservice.exception.CourseNotFoundException;
 import com.yurii.zhuravlov.courseservice.exception.NotAnAuthorException;
 import com.yurii.zhuravlov.courseservice.model.Course;
+import com.yurii.zhuravlov.courseservice.mq.CourseEventPublisher;
 import com.yurii.zhuravlov.courseservice.repo.CourseRepository;
 import com.yurii.zhuravlov.courseservice.utils.MappingUtils;
 import com.yurii.zhuravlov.requests.CourseRequest;
@@ -25,6 +26,8 @@ import java.util.stream.Collectors;
 public class CourseService {
     private final CourseRepository repository;
     private final AuthClient authClient;
+    private final CourseEventPublisher courseEventPublisher;
+
 
 
     public CourseResponseShort createCourse(CourseRequest courseRequest, Long authorId) {
@@ -109,6 +112,8 @@ public class CourseService {
         }
 
         repository.delete(course);
+
+        courseEventPublisher.publishRemoveCourse(courseId);
     }
 
     public List<CourseResponseShort> findByIds(List<Long> courseIds){
