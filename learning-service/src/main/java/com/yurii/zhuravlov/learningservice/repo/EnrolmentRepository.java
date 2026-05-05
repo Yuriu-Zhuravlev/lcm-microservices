@@ -1,5 +1,6 @@
 package com.yurii.zhuravlov.learningservice.repo;
 
+import com.yurii.zhuravlov.learningservice.dto.EnrolmentWithProgressDTO;
 import com.yurii.zhuravlov.learningservice.model.Enrolment;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -30,4 +31,16 @@ public interface EnrolmentRepository extends JpaRepository<Enrolment, Long> {
     @Modifying
     @Transactional
     void deleteByCourseId(Long courseId);
+
+    @Query("""
+    SELECT new com.yurii.zhuravlov.learningservice.dto.EnrolmentWithProgressDTO(
+        e,
+        COUNT(CASE WHEN p.isCompleted = true THEN 1 END)
+    )
+    FROM Enrolment e
+    LEFT JOIN e.lessonsProgress p
+    WHERE e.userId = :userId
+    GROUP BY e.id
+    """)
+    List<EnrolmentWithProgressDTO> findByUserIdWithCompletedCount(@Param("userId") Long userId);
 }

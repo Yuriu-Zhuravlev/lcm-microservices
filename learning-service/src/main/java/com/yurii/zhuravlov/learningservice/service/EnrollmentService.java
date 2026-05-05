@@ -1,6 +1,7 @@
 package com.yurii.zhuravlov.learningservice.service;
 
 import com.yurii.zhuravlov.learningservice.client.CourseServiceClient;
+import com.yurii.zhuravlov.learningservice.dto.EnrolmentWithProgressDTO;
 import com.yurii.zhuravlov.learningservice.exceptions.AlreadyEnrolledException;
 import com.yurii.zhuravlov.learningservice.exceptions.CourseNotFoundException;
 import com.yurii.zhuravlov.learningservice.exceptions.EnrollmentNotFoundException;
@@ -18,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -46,7 +48,7 @@ public class EnrollmentService {
 
         enrolment = enrolmentRepository.save(enrolment);
 
-        return getEnrollmentResponse(enrolment, courseResponseShort);
+        return getEnrollmentResponse(enrolment, courseResponseShort, 0);
     }
 
     @Transactional
@@ -90,27 +92,32 @@ public class EnrollmentService {
         return getEnrollmentResponse(enrolment,courseResponseShort, lessonProgress);
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public List<EnrollmentResponse> getEnrollmentsByUserId(Long userId) {
-        List<Enrolment> enrolments = enrolmentRepository.findByUserId(userId);
+        List<EnrolmentWithProgressDTO> results = enrolmentRepository.findByUserIdWithCompletedCount(userId);
+
+        if (results.isEmpty()) return Collections.emptyList();
+
         List<CourseResponseShort> courses = courseServiceClient.getAllCoursesByIds(
-                enrolments.stream()
-                        .map(Enrolment::getCourseId)
+                results.stream()
+                        .map(r -> r.enrolment().getCourseId())
                         .toList()
         );
         Map<Long, CourseResponseShort> courseMap = courses.stream()
                 .collect(Collectors.toMap(CourseResponseShort::id, Function.identity()));
-        return enrolments.stream().map(enrolment -> {
-            CourseResponseShort courseResponseShort = courseMap.get(enrolment.getCourseId());
+
+        return results.stream().map(res -> {
+            CourseResponseShort courseResponseShort = courseMap.get(res.enrolment().getCourseId());
             if (courseResponseShort == null) {
-                throw new CourseNotFoundException("Course with id = " + enrolment.getCourseId() + " not found");
+                throw new CourseNotFoundException("Course with id = " + res.enrolment().getCourseId() + " not found");
             }
-            return getEnrollmentResponse(enrolment, courseResponseShort);
+            return getEnrollmentResponse(res.enrolment(), courseResponseShort, res.completedLessonsCount().intValue());
         }).toList();
     }
 
     private static EnrollmentResponse getEnrollmentResponse(Enrolment enrolment,
-                                                            CourseResponseShort courseResponseShort) {
+                                                            CourseResponseShort courseResponseShort,
+                                                            Integer completedLessons) {
         return EnrollmentResponse.builder()
                 .id(enrolment.getId())
                 .course(courseResponseShort)
@@ -118,6 +125,7 @@ public class EnrollmentService {
                 .enrolledAt(enrolment.getEnrolledAt())
                 .completedAt(enrolment.getCompletedAt())
                 .totalLessons(enrolment.getTotalLessonsCount())
+                .completedLessons(completedLessons)
                 .build();
     }
 
