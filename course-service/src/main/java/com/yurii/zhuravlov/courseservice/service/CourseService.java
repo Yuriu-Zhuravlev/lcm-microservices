@@ -4,6 +4,7 @@ import com.yurii.zhuravlov.courseservice.client.AuthClient;
 import com.yurii.zhuravlov.courseservice.exception.CourseNotFoundException;
 import com.yurii.zhuravlov.courseservice.exception.NotAnAuthorException;
 import com.yurii.zhuravlov.courseservice.model.Course;
+import com.yurii.zhuravlov.courseservice.mq.CourseEventPublisher;
 import com.yurii.zhuravlov.courseservice.repo.CourseRepository;
 import com.yurii.zhuravlov.courseservice.utils.MappingUtils;
 import com.yurii.zhuravlov.requests.CourseRequest;
@@ -15,12 +16,18 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class CourseService {
     private final CourseRepository repository;
     private final AuthClient authClient;
+    private final CourseEventPublisher courseEventPublisher;
+
 
 
     public CourseResponseShort createCourse(CourseRequest courseRequest, Long authorId) {
@@ -61,6 +68,16 @@ public class CourseService {
                 .orElseThrow(CourseNotFoundException::new);
     }
 
+    @Transactional
+    public CourseResponseShort getCourseShortById(Long id){
+        return repository.findById(id)
+                .map(course -> {
+                    UserResponse userResponse = getUserResponse(course.getAuthorId());
+                    return MappingUtils.toCourseShortDTOWithLessonCount(course, userResponse);
+                })
+                .orElseThrow(CourseNotFoundException::new);
+    }
+
     public List<CourseResponseShort> getCoursesByAuthor(Long authorId) {
         return repository.findByAuthorId(authorId).stream().map(course -> {
             UserResponse userResponse = getUserResponse(course.getAuthorId());
@@ -95,5 +112,21 @@ public class CourseService {
         }
 
         repository.delete(course);
+
+        courseEventPublisher.publishRemoveCourse(courseId);
+    }
+
+    public List<CourseResponseShort> findByIds(List<Long> courseIds){
+        List<Course> courses = repository.findAllById(courseIds);
+        Set<UserResponse> userResponses = authClient.getUsersByIds(
+                courses.stream().map(Course::getAuthorId).collect(Collectors.toSet())
+        );
+        Map<Long, UserResponse> userMap = userResponses.stream()
+                .collect(Collectors.toMap(UserResponse::id, Function.identity()));
+        return courses.stream().map(course -> {
+            UserResponse userResponse = userMap.getOrDefault(course.getAuthorId(),
+                    new UserResponse(course.getAuthorId(), "Unknown"));
+            return MappingUtils.toCourseShortDTO(course, userResponse);
+        }).toList();
     }
 }

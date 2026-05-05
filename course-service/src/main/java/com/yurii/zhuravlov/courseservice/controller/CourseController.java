@@ -25,6 +25,11 @@ public class CourseController {
         return courseService.getAll();
     }
 
+    @GetMapping("/byIds")
+    public List<CourseResponseShort> getAllCoursesByIds(@RequestParam List<Long> ids) {
+        return courseService.findByIds(ids);
+    }
+
     @PostMapping
     public ResponseEntity<CourseResponseShort> createCourse(
             @Valid @RequestBody CourseRequest courseRequest,
@@ -42,6 +47,11 @@ public class CourseController {
     @GetMapping("/{id}")
     public CourseResponseFull getCourseById(@PathVariable Long id){
         return courseService.getCourseById(id);
+    }
+
+    @GetMapping("/short/{id}")
+    public CourseResponseShort getCourseShortById(@PathVariable Long id){
+        return courseService.getCourseShortById(id);
     }
 
     @PutMapping("/{id}")

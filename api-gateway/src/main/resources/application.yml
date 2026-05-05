@@ -37,6 +37,8 @@ springdoc:
         url: /api/auth/v3/api-docs
       - name: Course Service
         url: /api/courses/v3/api-docs
+      - name: Learning Service
+        url: /api/learning/v3/api-docs
   api-docs:
     path: /v3/api-docs
     enabled: true

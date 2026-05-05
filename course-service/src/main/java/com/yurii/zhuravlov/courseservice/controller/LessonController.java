@@ -5,10 +5,12 @@ import com.yurii.zhuravlov.courseservice.service.LessonService;
 import com.yurii.zhuravlov.requests.LessonCreteRequest;
 import com.yurii.zhuravlov.requests.LessonUpdateRequest;
 import com.yurii.zhuravlov.responses.LessonResponseFull;
+import com.yurii.zhuravlov.responses.QuizCorrectAnswersResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -35,8 +37,26 @@ public class LessonController {
     }
 
     @GetMapping("/{id}")
-    public LessonResponseFull getLessonById(@PathVariable Long id){
-        return lessonService.getLessonById(id);
+    public LessonResponseFull getLessonById(@PathVariable Long id, @CurrentUser Long userId){
+        return lessonService.getLessonById(id, userId);
+    }
+
+    @GetMapping("/internal/{id}")
+    public LessonResponseFull getLessonByIdInternal(@PathVariable Long id,
+                                                    @RequestHeader("X-Internal-Service") String internalService){
+        if (!"learning-service".equals(internalService)) {
+            throw new AccessDeniedException("Only internal services allowed");
+        }
+        return lessonService.getLessonByIdInternal(id);
+    }
+
+    @GetMapping("/internal/answers/{id}")
+    public QuizCorrectAnswersResponse getAnswersById(@PathVariable Long id,
+                                                     @RequestHeader("X-Internal-Service") String internalService){
+        if (!"learning-service".equals(internalService)) {
+            throw new AccessDeniedException("Only internal services allowed");
+        }
+        return lessonService.getCorrectAnswers(id);
     }
 
     @DeleteMapping("/{id}")

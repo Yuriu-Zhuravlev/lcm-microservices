@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.function.RouterFunction;
 import org.springframework.web.servlet.function.ServerResponse;
 
+import static org.springframework.cloud.gateway.server.mvc.filter.BeforeFilterFunctions.removeRequestHeader;
 import static org.springframework.cloud.gateway.server.mvc.filter.LoadBalancerFilterFunctions.lb;
 import static org.springframework.cloud.gateway.server.mvc.handler.GatewayRouterFunctions.route;
 import static org.springframework.cloud.gateway.server.mvc.handler.HandlerFunctions.http;
@@ -24,14 +25,26 @@ public class GatewayConfig {
                         .route(path("/api/courses/v3/api-docs"), http())
                         .filter(lb("course-service"))
                         .build())
+                .and(route("learning-api-docs")
+                        .route(path("/api/learning/v3/api-docs"), http())
+                        .filter(lb("learning-service"))
+                        .build())
                 .and(route("auth-service")
                         .route(path("/api/auth/**"), http())
+                        .before(removeRequestHeader("X-Internal-Service"))
                         .filter(lb("auth-service"))
                         .build())
                 .and(route("course-service")
                         .route(path("/api/courses/**"), http())
+                        .before(removeRequestHeader("X-Internal-Service"))
                         .filter(authFilter)
                         .filter(lb("course-service"))
+                        .build())
+                .and(route("learning-service")
+                        .route(path("/api/learning/**"), http())
+                        .before(removeRequestHeader("X-Internal-Service"))
+                        .filter(authFilter)
+                        .filter(lb("learning-service"))
                         .build());
     }
 }

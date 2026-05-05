@@ -1,0 +1,64 @@
+server:
+  port: 8083
+  forward-headers-strategy: framework
+
+spring:
+  application:
+    name: learning-service
+
+  datasource:
+    url: jdbc:postgresql://localhost:5433/lms_db?currentSchema=learning_schema&options=-c timezone=UTC
+    username: user
+    password: password
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        default_schema: learning_schema
+        format_sql: true
+    show-sql: true
+
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+
+  flyway:
+    enabled: true
+    schemas:  learning_schema
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+  cloud:
+    config:
+      enabled: false
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+    register-with-eureka: true
+    fetch-registry: true
+  instance:
+    prefer-ip-address: true
+
+logging:
+  level:
+    org.hibernate.SQL: DEBUG
+    org.hibernate.orm.jdbc.bind: TRACE
+
+jwt:
+  secret: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+  expiration: 86400000
+
+springdoc:
+  api-docs:
+    enabled: true
+    path: /api/learning/v3/api-docs
+  swagger-ui:
+    enabled: true
+    path: /api/learning/swagger-ui.html

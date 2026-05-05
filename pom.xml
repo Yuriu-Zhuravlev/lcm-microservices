@@ -23,6 +23,7 @@
         <module>api-gateway</module>
         <module>course-service</module>
         <module>eureka-server</module>
+        <module>learning-service</module>
     </modules>
 
     <properties>
