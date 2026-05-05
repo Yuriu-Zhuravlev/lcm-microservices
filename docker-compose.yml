@@ -19,32 +19,26 @@ services:
       - "15672:15672"
 
   eureka-server:
-    build:
-      context: .
-      dockerfile: eureka-server/Dockerfile
+    image: ghcr.io/yuriu-zhuravlev/lcm-microservices/eureka-server:latest
     container_name: lms-eureka
     ports:
       - "8761:8761"
 
   auth-service:
-    build:
-      context: .
-      dockerfile: auth-service/Dockerfile
+    image: ghcr.io/yuriu-zhuravlev/lcm-microservices/auth-service:latest
     container_name: lms-auth-service
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-db:5432/lms_db?currentSchema=auth_schema&options=-c timezone=UTC
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-db:5432/lms_db?currentSchema=auth_schema&options=-c%20timezone=UTC
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
     depends_on:
       - postgres-db
       - eureka-server
 
   course-service:
-    build:
-      context: .
-      dockerfile: course-service/Dockerfile
+    image: ghcr.io/yuriu-zhuravlev/lcm-microservices/course-service:latest
     container_name: lms-course-service
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-db:5432/lms_db?currentSchema=courses_schema&options=-c timezone=UTC
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-db:5432/lms_db?currentSchema=courses_schema&options=-c%20timezone=UTC
       SPRING_RABBITMQ_HOST: rabbitmq
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
     depends_on:
@@ -53,12 +47,10 @@ services:
       - eureka-server
 
   learning-service:
-    build:
-      context: .
-      dockerfile: learning-service/Dockerfile
+    image: ghcr.io/yuriu-zhuravlev/lcm-microservices/learning-service:latest
     container_name: lms-learning-service
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-db:5432/lms_db?currentSchema=learning_schema&options=-c timezone=UTC
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-db:5432/lms_db?currentSchema=learning_schema&options=-c%20timezone=UTC
       SPRING_RABBITMQ_HOST: rabbitmq
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
     depends_on:
@@ -67,9 +59,7 @@ services:
       - eureka-server
 
   api-gateway:
-    build:
-      context: .
-      dockerfile: api-gateway/Dockerfile
+    image: ghcr.io/yuriu-zhuravlev/lcm-microservices/api-gateway:latest
     container_name: lms-api-gateway
     ports:
       - "8080:8080"
