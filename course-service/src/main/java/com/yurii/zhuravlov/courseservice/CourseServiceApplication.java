@@ -10,7 +10,7 @@ import java.util.TimeZone;
 @EnableFeignClients
 public class CourseServiceApplication {
 
-    static void main(String[] args) {
+    public static void main(String[] args) {
         TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
         SpringApplication.run(CourseServiceApplication.class, args);
     }

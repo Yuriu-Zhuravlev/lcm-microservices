@@ -8,7 +8,7 @@ import java.util.TimeZone;
 @SpringBootApplication
 public class AuthServiceApplication {
 
-    static void main(String[] args) {
+    public static void main(String[] args) {
         TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
         SpringApplication.run(AuthServiceApplication.class, args);
     }

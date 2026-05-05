@@ -13,9 +13,70 @@ services:
 
   rabbitmq:
     image: rabbitmq:3-management
+    container_name: lms-rabbitmq
     ports:
       - "5672:5672"
       - "15672:15672"
+
+  eureka-server:
+    build:
+      context: .
+      dockerfile: eureka-server/Dockerfile
+    container_name: lms-eureka
+    ports:
+      - "8761:8761"
+
+  auth-service:
+    build:
+      context: .
+      dockerfile: auth-service/Dockerfile
+    container_name: lms-auth-service
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-db:5432/lms_db?currentSchema=auth_schema&options=-c timezone=UTC
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+    depends_on:
+      - postgres-db
+      - eureka-server
+
+  course-service:
+    build:
+      context: .
+      dockerfile: course-service/Dockerfile
+    container_name: lms-course-service
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-db:5432/lms_db?currentSchema=courses_schema&options=-c timezone=UTC
+      SPRING_RABBITMQ_HOST: rabbitmq
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+    depends_on:
+      - postgres-db
+      - rabbitmq
+      - eureka-server
+
+  learning-service:
+    build:
+      context: .
+      dockerfile: learning-service/Dockerfile
+    container_name: lms-learning-service
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-db:5432/lms_db?currentSchema=learning_schema&options=-c timezone=UTC
+      SPRING_RABBITMQ_HOST: rabbitmq
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+    depends_on:
+      - postgres-db
+      - rabbitmq
+      - eureka-server
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: api-gateway/Dockerfile
+    container_name: lms-api-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+    depends_on:
+      - eureka-server
 
 volumes:
   lms_postgres_data:
