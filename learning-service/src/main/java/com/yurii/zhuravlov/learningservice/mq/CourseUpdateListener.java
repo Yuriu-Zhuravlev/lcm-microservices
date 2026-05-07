@@ -27,7 +27,7 @@ public class CourseUpdateListener {
     }
 
     private void addLesson(CourseUpdatedEvent event){
-        enrolmentRepository.updateTotalLessons(event.courseId(), event.newTotalLessons());
+        enrolmentRepository.addLessonAndUpdateStatus(event.courseId(), event.newTotalLessons());
     }
 
     private void removeLesson(CourseUpdatedEvent event){
@@ -37,6 +37,7 @@ public class CourseUpdateListener {
 
     private void updateLessonQuiz(CourseUpdatedEvent event){
         userLessonProgressRepository.deleteByLessonId(event.lessonId());
+        enrolmentRepository.updateStatusWithUpdates(event.courseId());
     }
 
     private void removeCourse(CourseUpdatedEvent event){

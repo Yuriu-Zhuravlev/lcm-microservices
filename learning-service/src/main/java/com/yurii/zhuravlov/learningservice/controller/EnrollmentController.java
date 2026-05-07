@@ -31,4 +31,10 @@ public class EnrollmentController {
     public EnrollmentResponse getEnrollmentById(@PathVariable Long id, @CurrentUser Long userId){
         return enrollmentService.getEnrollmentById(userId, id);
     }
+
+    @PostMapping("/complete/{enrolmentId}")
+    public ResponseEntity<Void> completeCourse(@PathVariable Long enrolmentId, @CurrentUser Long userId){
+        enrollmentService.tryCompleteCourse(userId, enrolmentId);
+        return ResponseEntity.noContent().build();
+    }
 }

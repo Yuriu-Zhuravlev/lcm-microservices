@@ -44,7 +44,7 @@ public class QuestionService {
 
         question = questionRepository.save(question);
 
-        courseEventPublisher.publishUpdateQuiz(lessonId);
+        courseEventPublisher.publishUpdateQuiz(lessonId, lesson.getCourse().getId());
 
         return MappingUtils.toQuestionDto(question, true);
     }
@@ -68,7 +68,7 @@ public class QuestionService {
 
         question = questionRepository.save(question);
 
-        courseEventPublisher.publishUpdateQuiz(question.getLesson().getId());
+        courseEventPublisher.publishUpdateQuiz(question.getLesson().getId(), question.getLesson().getCourse().getId());
 
         return MappingUtils.toQuestionDto(question, true);
     }
@@ -84,6 +84,6 @@ public class QuestionService {
 
         questionRepository.delete(question);
 
-        courseEventPublisher.publishUpdateQuiz(question.getLesson().getId());
+        courseEventPublisher.publishUpdateQuiz(question.getLesson().getId(), question.getLesson().getCourse().getId());
     }
 }

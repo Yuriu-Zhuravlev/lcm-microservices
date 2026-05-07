@@ -2,18 +2,12 @@ package com.yurii.zhuravlov.learningservice.service;
 
 import com.yurii.zhuravlov.learningservice.client.CourseServiceClient;
 import com.yurii.zhuravlov.learningservice.dto.EnrolmentWithProgressDTO;
-import com.yurii.zhuravlov.learningservice.exceptions.AlreadyEnrolledException;
-import com.yurii.zhuravlov.learningservice.exceptions.CourseNotFoundException;
-import com.yurii.zhuravlov.learningservice.exceptions.EnrollmentNotFoundException;
-import com.yurii.zhuravlov.learningservice.exceptions.NotEnrolledException;
+import com.yurii.zhuravlov.learningservice.exceptions.*;
 import com.yurii.zhuravlov.learningservice.model.Enrolment;
 import com.yurii.zhuravlov.learningservice.model.UserLessonProgress;
 import com.yurii.zhuravlov.learningservice.model.enums.EnrolmentStatus;
 import com.yurii.zhuravlov.learningservice.repo.EnrolmentRepository;
-import com.yurii.zhuravlov.responses.CourseResponseFull;
-import com.yurii.zhuravlov.responses.CourseResponseShort;
-import com.yurii.zhuravlov.responses.EnrollmentResponse;
-import com.yurii.zhuravlov.responses.LessonProgressResponse;
+import com.yurii.zhuravlov.responses.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -113,6 +107,32 @@ public class EnrollmentService {
             }
             return getEnrollmentResponse(res.enrolment(), courseResponseShort, res.completedLessonsCount().intValue());
         }).toList();
+    }
+
+    @Transactional
+    public void tryCompleteCourse(Long userId, Long enrollmentId) {
+        Enrolment enrolment = enrolmentRepository.findById(enrollmentId)
+                .orElseThrow(EnrollmentNotFoundException::new);
+
+        if (!enrolment.getUserId().equals(userId)) {
+            throw new NotEnrolledException("Not your enrolment");
+        }
+
+        long completedLessonsCount = enrolmentRepository.countCompletedLessons(enrollmentId);
+
+        if (enrolment.getStatus() == EnrolmentStatus.COMPLETED &&
+                completedLessonsCount == enrolment.getTotalLessonsCount()) {
+            return;
+        }
+
+        if (completedLessonsCount >= enrolment.getTotalLessonsCount()) {
+            enrolment.setStatus(EnrolmentStatus.COMPLETED);
+            enrolment.setCompletedAt(LocalDateTime.now());
+            enrolmentRepository.save(enrolment);
+        } else {
+            throw new CourseNotCompletedException("Course not completed: you completed only " + completedLessonsCount +
+                    " of " + enrolment.getTotalLessonsCount() + " lessons.");
+        }
     }
 
     private static EnrollmentResponse getEnrollmentResponse(Enrolment enrolment,

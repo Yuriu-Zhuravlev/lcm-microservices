@@ -18,8 +18,6 @@ public interface EnrolmentRepository extends JpaRepository<Enrolment, Long> {
 
     Optional<Enrolment> findByUserIdAndCourseId(Long userId, Long courseId);
 
-    List<Enrolment> findByUserId(Long userId);
-
     @Query("SELECT COUNT(p) FROM UserLessonProgress p WHERE p.enrolment.id = :enrolmentId AND p.isCompleted = true")
     Long countCompletedLessons(Long enrolmentId);
 
@@ -43,4 +41,21 @@ public interface EnrolmentRepository extends JpaRepository<Enrolment, Long> {
     GROUP BY e.id
     """)
     List<EnrolmentWithProgressDTO> findByUserIdWithCompletedCount(@Param("userId") Long userId);
+
+    @Modifying
+    @Query("""
+        UPDATE Enrolment e
+        SET e.totalLessonsCount = :newCount,
+            e.status = CASE WHEN e.status = 'COMPLETED' THEN 'COMPLETED_WITH_UPDATES' ELSE e.status END
+        WHERE e.courseId = :courseId
+    """)
+    void addLessonAndUpdateStatus(@Param("courseId") Long courseId, @Param("newCount") Integer newCount);
+
+    @Modifying
+    @Query("""
+        UPDATE Enrolment e
+        SET e.status = CASE WHEN e.status = 'COMPLETED' THEN 'COMPLETED_WITH_UPDATES' ELSE e.status END
+        WHERE e.courseId = :courseId
+    """)
+    void updateStatusWithUpdates(@Param("courseId") Long courseId);
 }

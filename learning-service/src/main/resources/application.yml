@@ -43,10 +43,6 @@ spring:
     locations: classpath:db/migration
     baseline-on-migrate: true
 
-  cloud:
-    config:
-      enabled: false
-
 eureka:
   client:
     service-url:

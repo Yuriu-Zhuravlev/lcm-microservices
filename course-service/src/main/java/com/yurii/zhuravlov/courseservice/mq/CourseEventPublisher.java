@@ -31,9 +31,10 @@ public class CourseEventPublisher {
         rabbitTemplate.convertAndSend(RabbitConfig.COURSE_EXCHANGE, "", event);
     }
 
-    public void publishUpdateQuiz(Long lessonId){
+    public void publishUpdateQuiz(Long lessonId, Long courseId){
         CourseUpdatedEvent event = CourseUpdatedEvent.builder()
                 .lessonId(lessonId)
+                .courseId(courseId)
                 .action(CourseAction.UPDATE_LESSON_QUIZ)
                 .build();
         rabbitTemplate.convertAndSend(RabbitConfig.COURSE_EXCHANGE, "", event);
