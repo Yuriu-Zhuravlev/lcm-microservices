@@ -5,7 +5,7 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "user_lesson_progress",
+@Table(name = "user_lesson_progress", schema = "learning_schema",
         uniqueConstraints = @UniqueConstraint(columnNames = {"enrolment_id", "lesson_id"}))
 @Getter @Setter
 @NoArgsConstructor
