@@ -1,4 +1,4 @@
-package com.yurii.zhuravlov.courseservice.annotation;
+package com.yurii.zhuravlov.courseservice.config.annotation;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

@@ -120,12 +120,11 @@ public class EnrollmentService {
 
         long completedLessonsCount = enrolmentRepository.countCompletedLessons(enrollmentId);
 
-        if (enrolment.getStatus() == EnrolmentStatus.COMPLETED &&
-                completedLessonsCount == enrolment.getTotalLessonsCount()) {
+        if (enrolment.getStatus() == EnrolmentStatus.COMPLETED) {
             return;
         }
 
-        if (completedLessonsCount >= enrolment.getTotalLessonsCount()) {
+        if (completedLessonsCount == enrolment.getTotalLessonsCount()) {
             enrolment.setStatus(EnrolmentStatus.COMPLETED);
             enrolment.setCompletedAt(LocalDateTime.now());
             enrolmentRepository.save(enrolment);

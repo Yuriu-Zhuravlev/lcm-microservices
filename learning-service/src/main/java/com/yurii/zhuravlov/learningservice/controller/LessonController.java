@@ -25,7 +25,7 @@ public class LessonController {
     @PostMapping("/{lessonId}/submit")
     public ResponseEntity<QuizSubmitResponse> submitQuiz(
             @PathVariable Long lessonId,
-            @RequestBody Map<Long, Character> answers, // Приймаємо мапу прямо в запиті
+            @RequestBody Map<Long, Character> answers,
             @CurrentUser Long userId) {
 
         QuizSubmitRequest request = new QuizSubmitRequest(lessonId, answers);
