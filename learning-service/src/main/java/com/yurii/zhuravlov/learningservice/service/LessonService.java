@@ -37,6 +37,7 @@ public class LessonService {
         return lesson;
     }
 
+    @Transactional
     public QuizSubmitResponse submitLessonProgress(Long userId, QuizSubmitRequest request) {
         QuizCorrectAnswersResponse correctAnswers = courseServiceClient.getCorrectAnswers(request.lessonId());
 

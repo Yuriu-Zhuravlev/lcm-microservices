@@ -10,7 +10,7 @@ import java.util.Optional;
 public interface UserLessonProgressRepository extends JpaRepository<UserLessonProgress, Long> {
     Optional<UserLessonProgress> findByEnrolmentIdAndLessonId(Long enrollmentId, Long lessonId);
 
-    @Modifying
+    @Modifying(clearAutomatically = true)
     @Transactional
     void deleteByLessonId(Long lessonId);
 }

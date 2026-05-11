@@ -21,12 +21,12 @@ public interface EnrolmentRepository extends JpaRepository<Enrolment, Long> {
     @Query("SELECT COUNT(p) FROM UserLessonProgress p WHERE p.enrolment.id = :enrolmentId AND p.isCompleted = true")
     Long countCompletedLessons(Long enrolmentId);
 
-    @Modifying
+    @Modifying(clearAutomatically = true)
     @Transactional
     @Query("UPDATE Enrolment e SET e.totalLessonsCount = :newCount WHERE e.courseId = :courseId")
     void updateTotalLessons(@Param("courseId") Long courseId, @Param("newCount") Integer newCount);
 
-    @Modifying
+    @Modifying(clearAutomatically = true)
     @Transactional
     void deleteByCourseId(Long courseId);
 
@@ -42,7 +42,7 @@ public interface EnrolmentRepository extends JpaRepository<Enrolment, Long> {
     """)
     List<EnrolmentWithProgressDTO> findByUserIdWithCompletedCount(@Param("userId") Long userId);
 
-    @Modifying
+    @Modifying(clearAutomatically = true)
     @Query("""
         UPDATE Enrolment e
         SET e.totalLessonsCount = :newCount,
@@ -51,7 +51,7 @@ public interface EnrolmentRepository extends JpaRepository<Enrolment, Long> {
     """)
     void addLessonAndUpdateStatus(@Param("courseId") Long courseId, @Param("newCount") Integer newCount);
 
-    @Modifying
+    @Modifying(clearAutomatically = true)
     @Query("""
         UPDATE Enrolment e
         SET e.status = CASE WHEN e.status = 'COMPLETED' THEN 'COMPLETED_WITH_UPDATES' ELSE e.status END

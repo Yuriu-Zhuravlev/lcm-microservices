@@ -1,6 +1,6 @@
 package com.yurii.zhuravlov.courseservice.config;
 
-import com.yurii.zhuravlov.courseservice.annotation.CurrentUser;
+import com.yurii.zhuravlov.courseservice.config.annotation.CurrentUser;
 import com.yurii.zhuravlov.utils.OpenApiUtils;
 import io.swagger.v3.oas.models.OpenAPI;
 import org.springdoc.core.utils.SpringDocUtils;

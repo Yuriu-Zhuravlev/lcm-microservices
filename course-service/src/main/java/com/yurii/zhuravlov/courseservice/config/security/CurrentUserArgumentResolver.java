@@ -1,6 +1,6 @@
 package com.yurii.zhuravlov.courseservice.config.security;
 
-import com.yurii.zhuravlov.courseservice.annotation.CurrentUser;
+import com.yurii.zhuravlov.courseservice.config.annotation.CurrentUser;
 import org.jspecify.annotations.NonNull;
 import org.springframework.core.MethodParameter;
 import org.springframework.security.core.Authentication;

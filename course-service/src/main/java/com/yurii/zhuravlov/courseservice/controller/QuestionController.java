@@ -1,6 +1,6 @@
 package com.yurii.zhuravlov.courseservice.controller;
 
-import com.yurii.zhuravlov.courseservice.annotation.CurrentUser;
+import com.yurii.zhuravlov.courseservice.config.annotation.CurrentUser;
 import com.yurii.zhuravlov.courseservice.service.QuestionService;
 import com.yurii.zhuravlov.requests.QuestionRequest;
 import com.yurii.zhuravlov.responses.QuestionResponse;
