@@ -25,6 +25,7 @@ public abstract class AbstractJwtService {
     public Long extractUserId(String token) {
         return extractClaim(token, claims -> {
             Object userId = claims.get("userId");
+            if (userId == null) throw new IllegalStateException("User id cannot be null");
             if (userId instanceof Integer) return ((Integer) userId).longValue();
             return (Long) userId;
         });

@@ -21,7 +21,7 @@ RUN mvn dependency:go-offline -B
 COPY common-dto/src common-dto/src
 COPY learning-service/src learning-service/src
 
-RUN mvn clean install -DskipTests -pl common-dto -am
+RUN mvn clean install -pl common-dto -am
 RUN mvn clean package -pl learning-service -am
 
 FROM eclipse-temurin:21-jre-alpine

@@ -16,7 +16,7 @@ RUN mvn dependency:go-offline -B
 COPY common-dto/src common-dto/src
 COPY api-gateway/src api-gateway/src
 
-RUN mvn clean install -DskipTests -pl common-dto -am
+RUN mvn clean install -pl common-dto -am
 RUN mvn clean package -DskipTests -pl api-gateway -am
 
 FROM eclipse-temurin:21-jre-alpine
