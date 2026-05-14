@@ -51,11 +51,17 @@ public class CourseService {
     }
 
     public List<CourseResponseShort> getAll() {
-        return repository.findAll().stream()
-                .map(course -> {
-                    UserResponse userResponse = getUserResponse(course.getAuthorId());
-                    return MappingUtils.toCourseShortDTO(course, userResponse);
-                }).toList();
+        List<Course> courses = repository.findAll();
+        Set<UserResponse> userResponses = authClient.getUsersByIds(
+                courses.stream().map(Course::getAuthorId).collect(Collectors.toSet())
+        );
+        Map<Long, UserResponse> userMap = userResponses.stream()
+                .collect(Collectors.toMap(UserResponse::id, Function.identity()));
+        return courses.stream().map(course -> {
+            UserResponse userResponse = userMap.getOrDefault(course.getAuthorId(),
+                    new UserResponse(course.getAuthorId(), "Unknown"));
+            return MappingUtils.toCourseShortDTO(course, userResponse);
+        }).toList();
     }
 
     @Transactional
@@ -79,8 +85,14 @@ public class CourseService {
     }
 
     public List<CourseResponseShort> getCoursesByAuthor(Long authorId) {
-        return repository.findByAuthorId(authorId).stream().map(course -> {
-            UserResponse userResponse = getUserResponse(course.getAuthorId());
+        List<Course> courses = repository.findByAuthorId(authorId);
+        Set<UserResponse> userResponses = authClient.getUsersByIds(
+                courses.stream().map(Course::getAuthorId).collect(Collectors.toSet()));
+        Map<Long, UserResponse> userMap = userResponses.stream()
+                .collect(Collectors.toMap(UserResponse::id, Function.identity()));
+        return courses.stream().map(course -> {
+            UserResponse userResponse = userMap.getOrDefault(course.getAuthorId(),
+                    new UserResponse(course.getAuthorId(), "Unknown"));
             return MappingUtils.toCourseShortDTO(course, userResponse);
         }).toList();
     }
@@ -119,8 +131,7 @@ public class CourseService {
     public List<CourseResponseShort> findByIds(List<Long> courseIds){
         List<Course> courses = repository.findAllById(courseIds);
         Set<UserResponse> userResponses = authClient.getUsersByIds(
-                courses.stream().map(Course::getAuthorId).collect(Collectors.toSet())
-        );
+                courses.stream().map(Course::getAuthorId).collect(Collectors.toSet()));
         Map<Long, UserResponse> userMap = userResponses.stream()
                 .collect(Collectors.toMap(UserResponse::id, Function.identity()));
         return courses.stream().map(course -> {

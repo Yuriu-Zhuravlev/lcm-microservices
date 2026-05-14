@@ -17,7 +17,7 @@ COPY common-dto/src common-dto/src
 COPY course-service/src course-service/src
 
 RUN mvn clean install -DskipTests -pl common-dto -am
-RUN mvn clean package -DskipTests -pl course-service -am
+RUN mvn clean package -pl course-service -am
 
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
