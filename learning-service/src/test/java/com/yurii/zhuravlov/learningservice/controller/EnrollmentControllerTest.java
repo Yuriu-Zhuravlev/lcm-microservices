@@ -23,7 +23,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
 @WebMvcTest(EnrollmentController.class)
-// Якщо у тебе є Security конфігурація, може знадобитися вимкнути її для цього тесту:
 @AutoConfigureMockMvc(addFilters = false)
 class EnrollmentControllerTest {
 
@@ -36,7 +35,6 @@ class EnrollmentControllerTest {
     @MockitoBean
     private JwtService jwtService;
 
-    // Допоміжний об'єкт для тестів
     private EnrollmentResponse sampleResponse;
 
     @BeforeEach
@@ -68,18 +66,16 @@ class EnrollmentControllerTest {
                 .andExpect(jsonPath("$.size()").value(1));
     }
 
-    // --- ТЕСТУВАННЯ EXCEPTION HANDLER ---
 
     @Test
     void getEnrollmentById_WhenNotFound_ShouldReturn404FromHandler() throws Exception {
-        // Змушуємо сервіс викинути кастомний ексепшн
         when(enrollmentService.getEnrollmentById(any(), eq(999L)))
                 .thenThrow(new EnrollmentNotFoundException());
 
         mockMvc.perform(get("/api/learning/enrollment/{id}", 999L))
-                .andExpect(status().isNotFound()) // Перевіряємо, що статус 404
-                .andExpect(jsonPath("$.message").value("Enrollment not found")) // Текст із твого Exception
-                .andExpect(jsonPath("$.status").value(404)); // Перевіряємо структуру ErrorResponse
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("Enrollment not found"))
+                .andExpect(jsonPath("$.status").value(404));
     }
 
     @Test
@@ -92,7 +88,6 @@ class EnrollmentControllerTest {
 
     @Test
     void handleFeignException_ShouldReturnExternalServiceError() throws Exception {
-        // Імітуємо помилку від Feign (наприклад, курс не знайдено в іншому сервісі)
         FeignException feignException = mock(FeignException.class);
         when(feignException.status()).thenReturn(503);
         when(feignException.getMessage()).thenReturn("Service Unavailable");
@@ -107,7 +102,6 @@ class EnrollmentControllerTest {
 
     @Test
     void handleFeignException_ShouldReturnInternalServiceError() throws Exception {
-        // Імітуємо помилку від Feign (наприклад, курс не знайдено в іншому сервісі)
         FeignException feignException = mock(FeignException.class);
         when(feignException.status()).thenReturn(-1);
         when(feignException.getMessage()).thenReturn("Service Unavailable");
