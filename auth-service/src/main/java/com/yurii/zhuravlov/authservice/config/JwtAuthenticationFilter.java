@@ -1,7 +1,6 @@
 package com.yurii.zhuravlov.authservice.config;
 
 import com.yurii.zhuravlov.authservice.service.CustomUserDetailsService;
-import com.yurii.zhuravlov.authservice.service.JwtService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

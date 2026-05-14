@@ -1,4 +1,4 @@
-package com.yurii.zhuravlov.authservice.service;
+package com.yurii.zhuravlov.authservice.config;
 
 import com.yurii.zhuravlov.authservice.service.userdetails.CustomUserDetails;
 import com.yurii.zhuravlov.jwt.AbstractJwtService;

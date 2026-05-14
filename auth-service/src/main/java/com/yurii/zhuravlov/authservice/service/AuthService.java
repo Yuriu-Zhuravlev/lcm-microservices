@@ -1,5 +1,6 @@
 package com.yurii.zhuravlov.authservice.service;
 
+import com.yurii.zhuravlov.authservice.config.JwtService;
 import com.yurii.zhuravlov.authservice.entities.User;
 import com.yurii.zhuravlov.authservice.exceptions.UserAlreadyExists;
 import com.yurii.zhuravlov.authservice.exceptions.UserNotFound;
