@@ -29,7 +29,7 @@ public class AuthService {
 
     public void register(RegistrationRequest request) {
         if (userRepository.findByUsername(request.username()).isPresent()) {
-            throw new UserAlreadyExists("User already exists");
+            throw new UserAlreadyExists();
         }
 
         User user = new User();
@@ -46,13 +46,14 @@ public class AuthService {
         );
         CustomUserDetails user = (CustomUserDetails) authentication.getPrincipal();
         if (user == null){
-            throw new UserNotFound("User not found");
+            throw new UserNotFound();
         }
         return jwtService.generateToken(user);
     }
 
-    public User getUserById(Long id){
-        return userRepository.findById(id).orElseThrow(() -> new UserNotFound("User not found"));
+    public UserResponse getUserById(Long id){
+        User user = userRepository.findById(id).orElseThrow(UserNotFound::new);
+        return new UserResponse(user.getId(), user.getUsername());
     }
 
     public Set<UserResponse> findUsersByIds(Set<Long> userIds){

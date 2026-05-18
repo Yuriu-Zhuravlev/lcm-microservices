@@ -1,6 +1,5 @@
 package com.yurii.zhuravlov.authservice.controller;
 
-import com.yurii.zhuravlov.authservice.entities.User;
 import com.yurii.zhuravlov.authservice.service.AuthService;
 import com.yurii.zhuravlov.requests.LoginRequest;
 import com.yurii.zhuravlov.requests.RegistrationRequest;
@@ -34,8 +33,7 @@ public class AuthController {
 
     @GetMapping("/users/{id}")
     public UserResponse getUserById(@PathVariable("id") Long id) {
-        User user = authService.getUserById(id);
-        return new UserResponse(user.getId(), user.getUsername());
+        return authService.getUserById(id);
     }
 
     @GetMapping("/users")

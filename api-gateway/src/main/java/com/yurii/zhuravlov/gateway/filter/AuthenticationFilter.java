@@ -38,11 +38,6 @@ public class AuthenticationFilter implements HandlerFilterFunction<ServerRespons
                     .body("Invalid or expired auth token");
         }
 
-        Long userId = jwtService.extractUserId(token);
-        ServerRequest modifiedRequest = ServerRequest.from(request)
-                .header("X-User-Id", userId.toString())
-                .build();
-
-        return next.handle(modifiedRequest);
+        return next.handle(request);
     }
 }
