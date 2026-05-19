@@ -24,15 +24,33 @@ services:
     ports:
       - "8761:8761"
 
+  redis:
+    image: redis:7.2-alpine
+    container_name: lms-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: always
+
   auth-service:
     image: ghcr.io/yuriu-zhuravlev/lcm-microservices/auth-service:latest
     container_name: lms-auth-service
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-db:5432/lms_db?currentSchema=auth_schema&options=-c%20timezone=UTC
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
     depends_on:
-      - postgres-db
-      - eureka-server
+      postgres-db:
+        condition: service_started
+      eureka-server:
+        condition: service_started
+      redis:
+        condition: service_healthy
 
   course-service:
     image: ghcr.io/yuriu-zhuravlev/lcm-microservices/course-service:latest
@@ -45,6 +63,7 @@ services:
       - postgres-db
       - rabbitmq
       - eureka-server
+      - redis
 
   learning-service:
     image: ghcr.io/yuriu-zhuravlev/lcm-microservices/learning-service:latest
@@ -57,6 +76,7 @@ services:
       - postgres-db
       - rabbitmq
       - eureka-server
+      - redis
 
   api-gateway:
     image: ghcr.io/yuriu-zhuravlev/lcm-microservices/api-gateway:latest

@@ -9,21 +9,26 @@ import com.yurii.zhuravlov.authservice.service.userdetails.CustomUserDetails;
 import com.yurii.zhuravlov.requests.LoginRequest;
 import com.yurii.zhuravlov.requests.RegistrationRequest;
 import com.yurii.zhuravlov.responses.UserResponse;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -38,21 +43,27 @@ class AuthServiceTest {
     private AuthenticationManager authenticationManager;
     @Mock
     private JwtService jwtService;
+    @Mock
+    private RedisTemplate<String, Object> redisTemplate;
+    @Mock
+    private ValueOperations<String, Object> valueOperations;
 
     @InjectMocks
     private AuthService authService;
 
+    @BeforeEach
+    void setUp() {
+        lenient().when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+    }
+
     @Test
     void register_Success() {
-        // Given
         RegistrationRequest request = new RegistrationRequest("yurii", "password123");
         when(userRepository.findByUsername("yurii")).thenReturn(Optional.empty());
         when(passwordEncoder.encode("password123")).thenReturn("encoded_password");
 
-        // When
         authService.register(request);
 
-        // Then
         ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
         verify(userRepository).save(userCaptor.capture());
 
@@ -64,18 +75,15 @@ class AuthServiceTest {
 
     @Test
     void register_ThrowsUserAlreadyExists() {
-        // Given
         RegistrationRequest request = new RegistrationRequest("existing_user", "pass");
         when(userRepository.findByUsername("existing_user")).thenReturn(Optional.of(new User()));
 
-        // When & Then
         assertThrows(UserAlreadyExists.class, () -> authService.register(request));
         verify(userRepository, never()).save(any());
     }
 
     @Test
     void login_Success() {
-        // Given
         LoginRequest request = new LoginRequest("yurii", "password123");
         CustomUserDetails userDetails = mock(CustomUserDetails.class);
         Authentication authentication = mock(Authentication.class);
@@ -85,44 +93,23 @@ class AuthServiceTest {
         when(authentication.getPrincipal()).thenReturn(userDetails);
         when(jwtService.generateToken(userDetails)).thenReturn("generated_jwt_token");
 
-        // When
         String token = authService.login(request);
 
-        // Then
         assertEquals("generated_jwt_token", token);
         verify(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));
     }
 
     @Test
     void login_ThrowsUserNotFound_WhenPrincipalIsNull() {
-        // Given
         LoginRequest request = new LoginRequest("hacker", "wrong_pass");
         Authentication authentication = mock(Authentication.class);
 
         when(authenticationManager.authenticate(any())).thenReturn(authentication);
         when(authentication.getPrincipal()).thenReturn(null);
 
-        // When & Then
         assertThrows(UserNotFound.class, () -> authService.login(request));
     }
 
-    @Test
-    void findUsersByIds_ReturnsMappedResponses() {
-        // Given
-        Set<Long> ids = Set.of(1L, 2L);
-        User user1 = new User(); user1.setId(1L); user1.setUsername("user1");
-        User user2 = new User(); user2.setId(2L); user2.setUsername("user2");
-
-        when(userRepository.findAllById(ids)).thenReturn(List.of(user1, user2));
-
-        // When
-        Set<UserResponse> responses = authService.findUsersByIds(ids);
-
-        // Then
-        assertEquals(2, responses.size());
-        assertTrue(responses.stream().anyMatch(r -> r.username().equals("user1")));
-        assertTrue(responses.stream().anyMatch(r -> r.id().equals(2L)));
-    }
 
     @Test
     void getUserById_ReturnsMappedResponse(){
@@ -139,5 +126,35 @@ class AuthServiceTest {
     void getUserById_NotFound(){
         when(userRepository.findById(anyLong())).thenReturn(Optional.empty());
         assertThrows(UserNotFound.class,() -> authService.getUserById(1L));
+    }
+
+    @Test
+    void shouldReturnUsersFromCache() {
+        Set<Long> ids = Set.of(1L, 2L);
+        UserResponse user1 = new UserResponse(1L, "user1");
+        UserResponse user2 = new UserResponse(2L, "user2");
+
+        when(valueOperations.multiGet(anyCollection())).thenReturn(List.of(user1, user2));
+
+        Set<UserResponse> result = authService.findUsersByIds(ids);
+
+        assertThat(result).hasSize(2).containsExactlyInAnyOrder(user1, user2);
+        verifyNoInteractions(userRepository);
+    }
+
+    @Test
+    void shouldFetchFromDbWhenCacheIsPartial() {
+        Set<Long> ids = Set.of(1L, 2L);
+        UserResponse cachedUser = new UserResponse(1L, "user1");
+        User dbUserEntity = new User(); dbUserEntity.setUsername("user2"); dbUserEntity.setId(2L);
+
+        when(valueOperations.multiGet(anyCollection())).thenReturn(Arrays.asList(cachedUser, null));
+        when(userRepository.findAllById(anyCollection())).thenReturn(List.of(dbUserEntity));
+
+        Set<UserResponse> result = authService.findUsersByIds(ids);
+
+        assertThat(result).hasSize(2);
+        verify(valueOperations).multiSet(anyMap());
+        verify(userRepository).findAllById(anyCollection());
     }
 }

@@ -10,11 +10,17 @@ import com.yurii.zhuravlov.requests.LoginRequest;
 import com.yurii.zhuravlov.requests.RegistrationRequest;
 import com.yurii.zhuravlov.responses.UserResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -26,6 +32,8 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
+    private final RedisTemplate<String, Object> redisTemplate;
+    private static final String CACHE_KEY = "users::";
 
     public void register(RegistrationRequest request) {
         if (userRepository.findByUsername(request.username()).isPresent()) {
@@ -51,14 +59,49 @@ public class AuthService {
         return jwtService.generateToken(user);
     }
 
+    @Cacheable(value = "users", key = "#id")
     public UserResponse getUserById(Long id){
         User user = userRepository.findById(id).orElseThrow(UserNotFound::new);
         return new UserResponse(user.getId(), user.getUsername());
     }
 
-    public Set<UserResponse> findUsersByIds(Set<Long> userIds){
-        return userRepository.findAllById(userIds).stream()
-                .map(user -> new UserResponse(user.getId(), user.getUsername()))
-                .collect(Collectors.toSet());
+    public Set<UserResponse> findUsersByIds(Set<Long> userIds) {
+        if (userIds == null || userIds.isEmpty()) return Set.of();
+
+        List<String> keys = userIds.stream()
+                .map(id -> CACHE_KEY + id)
+                .toList();
+
+        List<Object> cachedUsers = redisTemplate.opsForValue().multiGet(keys);
+
+        Set<UserResponse> result = new HashSet<>();
+        Set<Long> missingIds = new HashSet<>();
+
+        int i = 0;
+        List<Long> idsList = userIds.stream().toList();
+        for (Object cached : cachedUsers) {
+            if (cached != null) {
+                result.add((UserResponse) cached);
+            } else {
+                missingIds.add(idsList.get(i));
+            }
+            i++;
+        }
+
+        if (!missingIds.isEmpty()) {
+            List<UserResponse> dbUsers = userRepository.findAllById(missingIds).stream()
+                    .map(user -> new UserResponse(user.getId(), user.getUsername()))
+                    .toList();
+
+            Map<String, UserResponse> toCache = dbUsers.stream()
+                    .collect(Collectors.toMap(u -> CACHE_KEY + u.id(), u -> u));
+
+            redisTemplate.opsForValue().multiSet(toCache);
+            toCache.keySet().forEach(key -> redisTemplate.expire(key, Duration.ofMinutes(60)));
+
+            result.addAll(dbUsers);
+        }
+
+        return result;
     }
 }
