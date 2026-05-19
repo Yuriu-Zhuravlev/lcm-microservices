@@ -86,15 +86,8 @@ public class CourseService {
 
     public List<CourseResponseShort> getCoursesByAuthor(Long authorId) {
         List<Course> courses = repository.findByAuthorId(authorId);
-        Set<UserResponse> userResponses = authClient.getUsersByIds(
-                courses.stream().map(Course::getAuthorId).collect(Collectors.toSet()));
-        Map<Long, UserResponse> userMap = userResponses.stream()
-                .collect(Collectors.toMap(UserResponse::id, Function.identity()));
-        return courses.stream().map(course -> {
-            UserResponse userResponse = userMap.getOrDefault(course.getAuthorId(),
-                    new UserResponse(course.getAuthorId(), "Unknown"));
-            return MappingUtils.toCourseShortDTO(course, userResponse);
-        }).toList();
+        UserResponse userResponse = getUserResponse(authorId);
+        return courses.stream().map(course -> MappingUtils.toCourseShortDTO(course, userResponse)).toList();
     }
 
     @Transactional

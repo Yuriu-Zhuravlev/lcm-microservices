@@ -168,7 +168,7 @@ class CourseServiceTest {
         Course c2 = Course.builder().id(2L).authorId(1L).build();
 
         when(repository.findByAuthorId(1L)).thenReturn(List.of(c1,c2));
-        when(authClient.getUsersByIds(any())).thenReturn(Set.of(new UserResponse(1L, "Yurii")));
+        when(authClient.getUserById(any())).thenReturn(new UserResponse(1L, "Yurii"));
 
         List<CourseResponseShort> result = courseService.getCoursesByAuthor(1L);
 
