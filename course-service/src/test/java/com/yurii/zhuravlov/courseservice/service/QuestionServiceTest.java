@@ -19,6 +19,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.redis.core.RedisTemplate;
 
 import java.util.List;
 import java.util.Optional;
@@ -37,6 +38,8 @@ class QuestionServiceTest {
     private LessonRepository lessonRepository;
     @Mock
     private CourseEventPublisher courseEventPublisher;
+    @Mock
+    private RedisTemplate<String, Object> redisTemplate;
 
     @InjectMocks
     private QuestionService questionService;
@@ -45,7 +48,6 @@ class QuestionServiceTest {
     class CreateQuestionTests {
         @Test
         void createQuestion_Success() {
-            // Given
             Long lessonId = 1L;
             Long userId = 10L;
             Long courseId = 5L;
@@ -60,14 +62,12 @@ class QuestionServiceTest {
             when(lessonRepository.findById(lessonId)).thenReturn(Optional.of(lesson));
             when(questionRepository.save(any(Question.class))).thenAnswer(i -> {
                 Question q = i.getArgument(0);
-                q.setId(100L); // імітуємо генерацію ID базою
+                q.setId(100L);
                 return q;
             });
 
-            // When
             QuestionResponse response = questionService.createQuestion(request, lessonId, userId);
 
-            // Then
             assertThat(response.text()).isEqualTo("What is Java?");
             verify(questionRepository).save(any(Question.class));
             verify(courseEventPublisher).publishUpdateQuiz(lessonId, courseId);
@@ -77,7 +77,7 @@ class QuestionServiceTest {
         void createQuestion_WhenNotAuthor_ShouldThrowException() {
             Long lessonId = 1L;
             Long userId = 10L;
-            Course course = Course.builder().authorId(999L).build(); // інший автор
+            Course course = Course.builder().authorId(999L).build();
             Lesson lesson = Lesson.builder().course(course).build();
 
             when(lessonRepository.findById(lessonId)).thenReturn(Optional.of(lesson));
@@ -102,7 +102,6 @@ class QuestionServiceTest {
     class UpdateQuestionTests {
         @Test
         void updateQuestion_Success() {
-            // Given
             Long questionId = 1L;
             Long userId = 10L;
             QuestionRequest request = new QuestionRequest("New Text", List.of(
@@ -119,17 +118,15 @@ class QuestionServiceTest {
             when(questionRepository.findByIdWithCourse(questionId)).thenReturn(Optional.of(existingQuestion));
             when(questionRepository.save(any(Question.class))).thenReturn(existingQuestion);
 
-            // When
             QuestionResponse response = questionService.updateQuestion(request, questionId, userId);
 
-            // Then
             assertThat(response.text()).isEqualTo("New Text");
             verify(courseEventPublisher).publishUpdateQuiz(2L, 5L);
+            verify(redisTemplate, times(2)).delete(any(String.class));
         }
 
         @Test
         void updateQuestion_WhenNotAnAuthor_ShouldThrowException() {
-            // Given
             Long questionId = 1L;
             Long userId = 10L;
             QuestionRequest request = new QuestionRequest("New Text", List.of(
@@ -162,7 +159,6 @@ class QuestionServiceTest {
     class DeleteQuestionTests {
         @Test
         void deleteQuestion_Success() {
-            // Given
             Long questionId = 1L;
             Long userId = 10L;
             Course course = Course.builder().id(5L).authorId(userId).build();
@@ -172,12 +168,11 @@ class QuestionServiceTest {
 
             when(questionRepository.findByIdWithCourse(questionId)).thenReturn(Optional.of(question));
 
-            // When
             questionService.deleteQuestion(questionId, userId);
 
-            // Then
             verify(questionRepository).delete(question);
             verify(courseEventPublisher).publishUpdateQuiz(2L, 5L);
+            verify(redisTemplate, times(2)).delete(any(String.class));
         }
 
         @Test

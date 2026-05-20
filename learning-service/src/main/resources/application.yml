@@ -21,6 +21,17 @@ spring:
         format_sql: true
     show-sql: true
 
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:localhost}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+    cache:
+      type: redis
+      redis:
+        cache-null-values: false
+        time-to-live: 3600000
+
+
   rabbitmq:
     host: localhost
     port: 5672

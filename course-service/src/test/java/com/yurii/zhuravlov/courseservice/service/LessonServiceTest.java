@@ -19,6 +19,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.redis.core.RedisTemplate;
 
 import java.util.List;
 import java.util.Map;
@@ -38,6 +39,8 @@ class LessonServiceTest {
     private CourseRepository courseRepository;
     @Mock
     private CourseEventPublisher courseEventPublisher;
+    @Mock
+    private RedisTemplate<String, Object> redisTemplate;
 
     @InjectMocks
     private LessonService lessonService;
@@ -103,6 +106,7 @@ class LessonServiceTest {
 
         verify(lessonRepository).delete(lesson);
         verify(courseEventPublisher).publishRemoveLesson(courseId, lessonId, 4);
+        verify(redisTemplate, times(2)).delete(any(String.class));
     }
 
     @Test
@@ -250,7 +254,6 @@ class LessonServiceTest {
 
     @Test
     void updateLesson_Success_ShouldUpdateAllFields() {
-        // Given
         Long lessonId = 1L;
         Long userId = 10L;
         LessonUpdateRequest request = new LessonUpdateRequest("Updated Title", "Updated HTML", 5);
@@ -265,32 +268,26 @@ class LessonServiceTest {
                 .build();
 
         when(lessonRepository.findById(lessonId)).thenReturn(Optional.of(existingLesson));
-        // При save повертаємо той самий об'єкт (він уже змінений сетерами)
         when(lessonRepository.save(any(Lesson.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        // When
         LessonResponseFull response = lessonService.updateLesson(lessonId, request, userId);
 
-        // Then
         assertThat(response.title()).isEqualTo("Updated Title");
         assertThat(response.htmlContent()).isEqualTo("Updated HTML");
         assertThat(response.orderIndex()).isEqualTo(5);
 
-        // Перевіряємо, чи дійсно сетери відпрацювали на об'єкті перед збереженням
         verify(lessonRepository).save(existingLesson);
         assertThat(existingLesson.getTitle()).isEqualTo("Updated Title");
     }
 
     @Test
     void updateLesson_WhenLessonNotFound_ShouldThrowLessonNotFoundException() {
-        // Given
         Long lessonId = 999L;
         Long userId = 1L;
         LessonUpdateRequest request = new LessonUpdateRequest("Title", "Content", 1);
 
         when(lessonRepository.findById(lessonId)).thenReturn(Optional.empty());
 
-        // When & Then
         assertThrows(LessonNotFoundException.class,
                 () -> lessonService.updateLesson(lessonId, request, userId));
 
@@ -299,7 +296,6 @@ class LessonServiceTest {
 
     @Test
     void updateLesson_WhenUserIsNotAuthor_ShouldThrowNotAnAuthorException() {
-        // Given
         Long lessonId = 1L;
         Long realAuthorId = 10L;
         Long hackerId = 777L;
@@ -309,7 +305,6 @@ class LessonServiceTest {
 
         when(lessonRepository.findById(lessonId)).thenReturn(Optional.of(lesson));
 
-        // When & Then
         assertThrows(NotAnAuthorException.class,
                 () -> lessonService.updateLesson(lessonId, new LessonUpdateRequest("T", "H", 1), hackerId));
 

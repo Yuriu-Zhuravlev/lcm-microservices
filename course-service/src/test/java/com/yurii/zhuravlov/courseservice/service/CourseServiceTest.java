@@ -15,7 +15,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -23,7 +26,6 @@ import java.util.Set;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyIterable;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -35,6 +37,11 @@ class CourseServiceTest {
     private AuthClient authClient;
     @Mock
     private CourseEventPublisher courseEventPublisher;
+    @Mock
+    private RedisTemplate<String, Object> redisTemplate;
+
+    @Mock
+    private ValueOperations<String, Object> valueOperations;
 
     @InjectMocks
     private CourseService courseService;
@@ -163,7 +170,7 @@ class CourseServiceTest {
     }
 
     @Test
-    void getCoursesByAuthor_ShouldHandleBulkUserMapping() {
+    void getCoursesByAuthor_ShouldReturnCoursesForAuthor() {
         Course c1 = Course.builder().id(1L).authorId(1L).build();
         Course c2 = Course.builder().id(2L).authorId(1L).build();
 
@@ -178,17 +185,66 @@ class CourseServiceTest {
     }
 
     @Test
-    void findByIds_ShouldHandleBulkUserMapping() {
+    void findByIds_WhenAllCached_ShouldNotHitRepository() {
+        CourseResponseShort dto1 = CourseResponseShort.builder().id(1L).build();
+        CourseResponseShort dto2 = CourseResponseShort.builder().id(2L).build();
+
+        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+        when(valueOperations.multiGet(List.of("courses-short-no-lessons::1", "courses-short-no-lessons::2")))
+                .thenReturn(List.of(dto1, dto2));
+
+        List<CourseResponseShort> result = courseService.findByIds(List.of(1L, 2L));
+
+        assertThat(result).hasSize(2);
+        verifyNoInteractions(repository);
+        verifyNoInteractions(authClient);
+    }
+
+    @Test
+    void findByIds_WhenNoneCached_ShouldHitRepositoryAndCache() {
         Course c1 = Course.builder().id(1L).authorId(1L).build();
         Course c2 = Course.builder().id(2L).authorId(2L).build();
 
-        when(repository.findAllById(anyIterable())).thenReturn(List.of(c1,c2));
-        when(authClient.getUsersByIds(any())).thenReturn(Set.of(new UserResponse(1L, "Yurii")));
+        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+        when(valueOperations.multiGet(List.of("courses-short-no-lessons::1", "courses-short-no-lessons::2")))
+                .thenReturn(Arrays.asList(null, null));
+        when(repository.findAllById(List.of(1L, 2L))).thenReturn(List.of(c1, c2));
+        when(authClient.getUsersByIds(any())).thenReturn(
+                Set.of(new UserResponse(1L, "Yurii"), new UserResponse(2L, "Bob"))
+        );
 
-        List<CourseResponseShort> result = courseService.findByIds(List.of(1L,2L));
+        List<CourseResponseShort> result = courseService.findByIds(List.of(1L, 2L));
 
         assertThat(result).hasSize(2);
-        assertThat(result.get(0).author().username()).isEqualTo("Yurii");
-        assertThat(result.get(1).author().username()).isEqualTo("Unknown");
+        verify(valueOperations).multiSet(any());
+        verify(redisTemplate, times(2)).expire(any(), any());
+    }
+
+    @Test
+    void findByIds_WhenPartiallyCached_ShouldOnlyFetchMissing() {
+        CourseResponseShort cachedDto = CourseResponseShort.builder().id(1L).build();
+        Course c2 = Course.builder().id(2L).authorId(2L).build();
+        UserResponse user2 = new UserResponse(2L, "Bob");
+
+        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+        when(valueOperations.multiGet(List.of("courses-short-no-lessons::1", "courses-short-no-lessons::2")))
+                .thenReturn(Arrays.asList(cachedDto, null));
+        when(repository.findAllById(List.of(2L))).thenReturn(List.of(c2));
+        when(authClient.getUsersByIds(Set.of(2L))).thenReturn(Set.of(user2));
+
+        List<CourseResponseShort> result = courseService.findByIds(List.of(1L, 2L));
+
+        assertThat(result).hasSize(2);
+        verify(repository).findAllById(List.of(2L)); // тільки missing id
+        verify(valueOperations).multiSet(any());
+    }
+
+    @Test
+    void findByIds_WhenEmptyList_ShouldReturnEmpty() {
+        List<CourseResponseShort> result = courseService.findByIds(List.of());
+
+        assertThat(result).isEmpty();
+        verifyNoInteractions(redisTemplate);
+        verifyNoInteractions(repository);
     }
 }

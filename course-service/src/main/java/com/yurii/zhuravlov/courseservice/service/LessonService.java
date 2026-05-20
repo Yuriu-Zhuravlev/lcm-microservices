@@ -15,6 +15,10 @@ import com.yurii.zhuravlov.requests.LessonUpdateRequest;
 import com.yurii.zhuravlov.responses.LessonResponseFull;
 import com.yurii.zhuravlov.responses.QuizCorrectAnswersResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,6 +31,8 @@ public class LessonService {
     private final LessonRepository lessonRepository;
     private final CourseRepository courseRepository;
     private final CourseEventPublisher courseEventPublisher;
+    private final RedisTemplate<String, Object> redisTemplate;
+
 
     @Transactional
     public LessonResponseFull getLessonById(Long id, Long userId){
@@ -40,6 +46,7 @@ public class LessonService {
     }
 
     @Transactional
+    @Cacheable(value = "lesson-internal", key = "#id")
     public LessonResponseFull getLessonByIdInternal(Long id){
         Lesson lesson = lessonRepository.findById(id).orElseThrow(LessonNotFoundException::new);
 
@@ -47,6 +54,10 @@ public class LessonService {
     }
 
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "courses", key = "#lessonRequest.courseId"),
+            @CacheEvict(value = "courses-short", key = "#lessonRequest.courseId")
+    })
     public LessonResponseFull createLesson(LessonCreteRequest lessonRequest, Long userId){
         Course course = courseRepository.findById(lessonRequest.courseId()).orElseThrow(CourseNotFoundException::new);
 
@@ -69,6 +80,7 @@ public class LessonService {
     }
 
     @Transactional
+    @CacheEvict(value = "lesson-internal", key = "#lessonId")
     public LessonResponseFull updateLesson(Long lessonId, LessonUpdateRequest request, Long userId) {
         Lesson lesson = lessonRepository.findById(lessonId)
                 .orElseThrow(LessonNotFoundException::new);
@@ -87,6 +99,7 @@ public class LessonService {
     }
 
     @Transactional
+    @CacheEvict(value = "lesson-internal", key = "#lessonId")
     public void deleteLesson(Long lessonId, Long userId){
         Lesson lesson = lessonRepository.findById(lessonId)
                 .orElseThrow(LessonNotFoundException::new);
@@ -98,11 +111,15 @@ public class LessonService {
         }
 
         lessonRepository.delete(lesson);
+
+        redisTemplate.delete("courses::" + courseId);
+        redisTemplate.delete("courses-short::" + courseId);
         int newTotalLessons = lessonRepository.countByCourseId(courseId);
         courseEventPublisher.publishRemoveLesson(courseId, lessonId, newTotalLessons);
     }
 
     @Transactional(readOnly = true)
+    @Cacheable(value = "correct-answers", key = "#lessonId")
     public QuizCorrectAnswersResponse getCorrectAnswers(Long lessonId) {
         Lesson lesson = lessonRepository.findById(lessonId)
                 .orElseThrow(() -> new LessonNotFoundException("Lesson not found"));

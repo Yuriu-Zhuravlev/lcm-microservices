@@ -13,6 +13,9 @@ import com.yurii.zhuravlov.courseservice.utils.MappingUtils;
 import com.yurii.zhuravlov.requests.QuestionRequest;
 import com.yurii.zhuravlov.responses.QuestionResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Caching;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,9 +25,14 @@ public class QuestionService {
     private final QuestionRepository questionRepository;
     private final LessonRepository lessonRepository;
     private final CourseEventPublisher courseEventPublisher;
+    private final RedisTemplate<String, Object> redisTemplate;
 
 
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "lesson-internal", key = "#lessonId"),
+            @CacheEvict(value = "correct-answers", key = "#lessonId")
+    })
     public QuestionResponse createQuestion (QuestionRequest request, Long lessonId, Long userId){
         Lesson lesson = lessonRepository.findById(lessonId).orElseThrow(LessonNotFoundException::new);
         if (!lesson.getCourse().getAuthorId().equals(userId)) {
@@ -66,9 +74,15 @@ public class QuestionService {
                         .toList()
         );
 
+        Long lessonId = question.getLesson().getId();
+        Long courseId = question.getLesson().getCourse().getId();
+
         question = questionRepository.save(question);
 
-        courseEventPublisher.publishUpdateQuiz(question.getLesson().getId(), question.getLesson().getCourse().getId());
+        redisTemplate.delete("lesson-internal::" + lessonId);
+        redisTemplate.delete("correct-answers::" + lessonId);
+
+        courseEventPublisher.publishUpdateQuiz(lessonId, courseId);
 
         return MappingUtils.toQuestionDto(question, true);
     }
@@ -84,6 +98,12 @@ public class QuestionService {
 
         questionRepository.delete(question);
 
-        courseEventPublisher.publishUpdateQuiz(question.getLesson().getId(), question.getLesson().getCourse().getId());
+        Long lessonId = question.getLesson().getId();
+        Long courseId = question.getLesson().getCourse().getId();
+
+        redisTemplate.delete("lesson-internal::" + lessonId);
+        redisTemplate.delete("correct-answers::" + lessonId);
+
+        courseEventPublisher.publishUpdateQuiz(lessonId, courseId);
     }
 }
