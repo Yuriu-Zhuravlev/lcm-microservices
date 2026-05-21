@@ -13,6 +13,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.redis.core.RedisTemplate;
 
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -32,6 +33,8 @@ class LessonServiceTest {
     private CourseServiceClient courseServiceClient;
     @Mock
     private UserLessonProgressRepository userLessonProgressRepository;
+    @Mock
+    private RedisTemplate<String, Object> redisTemplate;
 
     @InjectMocks
     private LessonService lessonService;
@@ -82,6 +85,7 @@ class LessonServiceTest {
         assertThat(response.isCompleted()).isTrue();
         assertThat(response.scorePercentage()).isEqualTo(100.00);
         verify(userLessonProgressRepository).save(any(UserLessonProgress.class));
+        verify(redisTemplate).delete(any(String.class));
     }
 
     @Test
@@ -102,6 +106,7 @@ class LessonServiceTest {
 
         assertThat(response.isCompleted()).isFalse();
         assertThat(response.scorePercentage()).isEqualTo(50.00);
+        verifyNoInteractions(redisTemplate);
     }
 
     @Test
@@ -119,6 +124,7 @@ class LessonServiceTest {
 
         assertThat(response.isCompleted()).isTrue();
         assertThat(response.scorePercentage()).isEqualTo(100.00);
+        verify(redisTemplate).delete(any(String.class));
     }
 
     @Test
@@ -144,6 +150,7 @@ class LessonServiceTest {
         assertThat(existingProgress.getCorrectAnswers()).isEqualTo(2);
         assertThat(existingProgress.getIsCompleted()).isTrue();
         verify(userLessonProgressRepository).save(existingProgress);
+        verify(redisTemplate).delete(any(String.class));
     }
 
     @Test
@@ -192,5 +199,7 @@ class LessonServiceTest {
         assertThat(existingProgress.getCompletedAt()).isEqualTo(firstCompletionTime);
         assertThat(existingProgress.getIsCompleted()).isTrue();
         verify(userLessonProgressRepository).save(existingProgress);
+        verifyNoInteractions(redisTemplate);
+
     }
 }

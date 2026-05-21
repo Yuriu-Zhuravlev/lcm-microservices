@@ -181,17 +181,17 @@ class EnrollmentServiceTest {
         when(enrolmentRepository.findByUserIdWithCompletedCount(userId)).thenReturn(List.of(dto));
         when(courseServiceClient.getAllCoursesByIds(any())).thenReturn(List.of(course));
 
-        List<EnrollmentResponse> responses = enrollmentService.getEnrollmentsByUserId(userId);
+        ListEnrollmentResponses responses = enrollmentService.getEnrollmentsByUserId(userId);
 
-        assertThat(responses).hasSize(1);
-        assertThat(responses.getFirst().completedLessons()).isEqualTo(5);
+        assertThat(responses.enrollmentResponses()).hasSize(1);
+        assertThat(responses.enrollmentResponses().getFirst().completedLessons()).isEqualTo(5);
     }
 
     @Test
     void getEnrollmentsByUserId_Empty_ReturnsEmptyList() {
         when(enrolmentRepository.findByUserIdWithCompletedCount(1L)).thenReturn(Collections.emptyList());
-        List<EnrollmentResponse> responses = enrollmentService.getEnrollmentsByUserId(1L);
-        assertThat(responses).isEmpty();
+        ListEnrollmentResponses responses = enrollmentService.getEnrollmentsByUserId(1L);
+        assertThat(responses.enrollmentResponses()).isEmpty();
     }
 
     @Test

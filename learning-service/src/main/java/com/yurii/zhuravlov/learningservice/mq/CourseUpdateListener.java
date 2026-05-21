@@ -6,6 +6,7 @@ import com.yurii.zhuravlov.learningservice.repo.EnrolmentRepository;
 import com.yurii.zhuravlov.learningservice.repo.UserLessonProgressRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,6 +18,7 @@ public class CourseUpdateListener {
 
     @RabbitListener(queues = RabbitConfig.COURSE_QUEUE)
     @Transactional
+    @CacheEvict(value = "user-enrollments", allEntries = true)
     public void handleCourseUpdate(CourseUpdatedEvent event) {
         switch (event.action()){
             case ADD_LESSON: addLesson(event); break;

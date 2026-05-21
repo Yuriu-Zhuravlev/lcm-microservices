@@ -4,6 +4,7 @@ import com.yurii.zhuravlov.learningservice.config.security.jwt.JwtService;
 import com.yurii.zhuravlov.learningservice.exceptions.EnrollmentNotFoundException;
 import com.yurii.zhuravlov.learningservice.service.EnrollmentService;
 import com.yurii.zhuravlov.responses.EnrollmentResponse;
+import com.yurii.zhuravlov.responses.ListEnrollmentResponses;
 import feign.FeignException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -59,7 +60,8 @@ class EnrollmentControllerTest {
 
     @Test
     void getMyEnrollments_ShouldReturnList() throws Exception {
-        when(enrollmentService.getEnrollmentsByUserId(any())).thenReturn(List.of(sampleResponse));
+        when(enrollmentService.getEnrollmentsByUserId(any()))
+                .thenReturn(new ListEnrollmentResponses(List.of(sampleResponse)));
 
         mockMvc.perform(get("/api/learning/enrollment/my"))
                 .andExpect(status().isOk())

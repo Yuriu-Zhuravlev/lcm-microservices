@@ -9,6 +9,8 @@ import com.yurii.zhuravlov.learningservice.model.enums.EnrolmentStatus;
 import com.yurii.zhuravlov.learningservice.repo.EnrolmentRepository;
 import com.yurii.zhuravlov.responses.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,6 +29,7 @@ public class EnrollmentService {
     private final CourseServiceClient courseServiceClient;
 
     @Transactional
+    @CacheEvict(value = "user-enrollments", key = "#userId")
     public EnrollmentResponse enrollUser(Long userId, Long courseId) {
         if (enrolmentRepository.existsByUserIdAndCourseId(userId, courseId)) {
             throw new AlreadyEnrolledException();
@@ -87,10 +90,11 @@ public class EnrollmentService {
     }
 
     @Transactional(readOnly = true)
-    public List<EnrollmentResponse> getEnrollmentsByUserId(Long userId) {
+    @Cacheable(value = "user-enrollments", key = "#userId")
+    public ListEnrollmentResponses getEnrollmentsByUserId(Long userId) {
         List<EnrolmentWithProgressDTO> results = enrolmentRepository.findByUserIdWithCompletedCount(userId);
 
-        if (results.isEmpty()) return Collections.emptyList();
+        if (results.isEmpty()) return new ListEnrollmentResponses(Collections.emptyList());
 
         List<CourseResponseShort> courses = courseServiceClient.getAllCoursesByIds(
                 results.stream()
@@ -100,16 +104,17 @@ public class EnrollmentService {
         Map<Long, CourseResponseShort> courseMap = courses.stream()
                 .collect(Collectors.toMap(CourseResponseShort::id, Function.identity()));
 
-        return results.stream().map(res -> {
+        return new ListEnrollmentResponses(results.stream().map(res -> {
             CourseResponseShort courseResponseShort = courseMap.get(res.enrolment().getCourseId());
             if (courseResponseShort == null) {
                 throw new CourseNotFoundException("Course with id = " + res.enrolment().getCourseId() + " not found");
             }
             return getEnrollmentResponse(res.enrolment(), courseResponseShort, res.completedLessonsCount().intValue());
-        }).toList();
+        }).toList());
     }
 
     @Transactional
+    @CacheEvict(value = "user-enrollments", key = "#userId")
     public void tryCompleteCourse(Long userId, Long enrollmentId) {
         Enrolment enrolment = enrolmentRepository.findById(enrollmentId)
                 .orElseThrow(EnrollmentNotFoundException::new);

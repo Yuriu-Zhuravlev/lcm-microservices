@@ -11,6 +11,7 @@ import com.yurii.zhuravlov.responses.LessonResponseFull;
 import com.yurii.zhuravlov.responses.QuizCorrectAnswersResponse;
 import com.yurii.zhuravlov.responses.QuizSubmitResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +26,8 @@ public class LessonService {
     private final EnrolmentRepository enrolmentRepository;
     private final CourseServiceClient courseServiceClient;
     private final UserLessonProgressRepository userLessonProgressRepository;
+    private final RedisTemplate<String, Object> redisTemplate;
+
 
     @Transactional
     public LessonResponseFull getLessonContent(Long lessonId, Long userId) {
@@ -73,6 +76,8 @@ public class LessonService {
                         .totalQuestions(totalQuestions)
                         .build());
 
+        boolean wasCompleted = progress.getIsCompleted();
+
         if (!progress.getIsCompleted() && isCompleted) {
             progress.setIsCompleted(true);
             progress.setCompletedAt(LocalDateTime.now());
@@ -84,6 +89,10 @@ public class LessonService {
         }
 
         userLessonProgressRepository.save(progress);
+
+        if (!wasCompleted && isCompleted) {
+            redisTemplate.delete("user-enrollments::" + userId);
+        }
 
         double rawPercentage = totalQuestions == 0 ? 100.0 : ((double) correctCount / totalQuestions) * 100;
         double roundedPercentage = BigDecimal.valueOf(rawPercentage)
