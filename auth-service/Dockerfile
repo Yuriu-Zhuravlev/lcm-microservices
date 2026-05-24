@@ -21,7 +21,7 @@ COPY common-dto/src common-dto/src
 COPY auth-service/src auth-service/src
 
 # Збираємо модулі
-RUN mvn clean install -pl common-dto -am
+RUN mvn clean install -pl -DskipTests common-dto  -am
 RUN mvn clean package -DskipTests -pl auth-service -am
 
 # 2. Етап запуску
