@@ -2,20 +2,16 @@ package com.yurii.zhuravlov.authservice.integration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yurii.zhuravlov.authservice.entities.User;
-import com.yurii.zhuravlov.authservice.repository.UserRepository;
 import com.yurii.zhuravlov.requests.LoginRequest;
 import com.yurii.zhuravlov.requests.RegistrationRequest;
 import com.yurii.zhuravlov.responses.AuthResponse;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -23,8 +19,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureMockMvc
-@Testcontainers
-@ActiveProfiles("cache-test")
 class AuthIntegrationTest extends BaseIntegrationTest {
 
     @Autowired
@@ -33,13 +27,6 @@ class AuthIntegrationTest extends BaseIntegrationTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-    @Autowired
-    private UserRepository userRepository;
-
-    @BeforeEach
-    void setUp() {
-        userRepository.deleteAll();
-    }
 
     @Test
     void register_ShouldReturnOk_WhenRequestIsValid() throws Exception {

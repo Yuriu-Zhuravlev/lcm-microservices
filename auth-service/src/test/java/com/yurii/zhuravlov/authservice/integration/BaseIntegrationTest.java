@@ -1,6 +1,11 @@
 package com.yurii.zhuravlov.authservice.integration;
 
+import com.yurii.zhuravlov.authservice.repository.UserRepository;
+import org.junit.Assert;
+import org.junit.jupiter.api.BeforeEach;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -13,6 +18,20 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @Testcontainers
 @ActiveProfiles("cache-test")
 public abstract class BaseIntegrationTest {
+
+    @Autowired
+    protected UserRepository userRepository;
+
+    @Autowired
+    protected RedisTemplate<String, Object> redisTemplate;
+
+    @BeforeEach
+    void setUp() {
+        userRepository.deleteAll();
+        Assert.assertNotNull(redisTemplate.getConnectionFactory());
+        redisTemplate.getConnectionFactory().getConnection().serverCommands().flushAll();
+
+    }
 
     @Container
     static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16")

@@ -1,20 +1,14 @@
 package com.yurii.zhuravlov.authservice.integration;
 
 import com.yurii.zhuravlov.authservice.entities.User;
-import com.yurii.zhuravlov.authservice.repository.UserRepository;
 import com.yurii.zhuravlov.authservice.service.AuthService;
 import com.yurii.zhuravlov.requests.LoginRequest;
 import com.yurii.zhuravlov.responses.UserResponse;
-import org.junit.Assert;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.test.context.ActiveProfiles;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.util.List;
 import java.util.Set;
@@ -23,28 +17,14 @@ import java.util.stream.Collectors;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
-@Testcontainers
-@ActiveProfiles("cache-test")
 public class AuthServiceCacheTest extends BaseIntegrationTest{
 
     @Autowired
     private AuthService authService;
 
     @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
-    private RedisTemplate<String, Object> redisTemplate;
-
-    @Autowired
     private PasswordEncoder passwordEncoder;
 
-    @BeforeEach
-    void setUp() {
-        userRepository.deleteAll();
-        Assert.assertNotNull(redisTemplate.getConnectionFactory());
-        redisTemplate.getConnectionFactory().getConnection().serverCommands().flushAll();
-    }
 
     @Test
     public void getUserById_ShouldCacheResult_OnSecondCall() {
