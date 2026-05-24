@@ -25,7 +25,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @Testcontainers
 @ActiveProfiles("cache-test")
-class AuthIntegrationTest {
+class AuthIntegrationTest extends BaseIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;
