@@ -20,10 +20,6 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.containers.RabbitMQContainer;
-import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import javax.crypto.SecretKey;
@@ -33,32 +29,19 @@ import java.util.Date;
 @AutoConfigureMockMvc
 @Testcontainers
 @ActiveProfiles("integration-test")
-public abstract class BaseIntegrationTest {
-
-    @Container
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16")
-            .withDatabaseName("lms_db")
-            .withUsername("user")
-            .withPassword("password");
-
-    @Container
-    static GenericContainer<?> redis = new GenericContainer<>("redis:7-alpine")
-            .withExposedPorts(6379);
-
-    @Container
-    static RabbitMQContainer rabbitmq = new RabbitMQContainer("rabbitmq:3.13-alpine");
+public abstract class BaseIntegrationTest extends TestContainersConfig {
 
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", postgres::getJdbcUrl);
-        registry.add("spring.datasource.username", postgres::getUsername);
-        registry.add("spring.datasource.password", postgres::getPassword);
-        registry.add("spring.data.redis.host", redis::getHost);
-        registry.add("spring.data.redis.port", () -> redis.getMappedPort(6379));
-        registry.add("spring.rabbitmq.host", rabbitmq::getHost);
-        registry.add("spring.rabbitmq.port", () -> rabbitmq.getMappedPort(5672));
-        registry.add("spring.rabbitmq.username", rabbitmq::getAdminUsername);
-        registry.add("spring.rabbitmq.password", rabbitmq::getAdminPassword);
+        registry.add("spring.datasource.url", POSTGRES::getJdbcUrl);
+        registry.add("spring.datasource.username", POSTGRES::getUsername);
+        registry.add("spring.datasource.password", POSTGRES::getPassword);
+        registry.add("spring.data.redis.host", REDIS::getHost);
+        registry.add("spring.data.redis.port", () -> REDIS.getMappedPort(6379));
+        registry.add("spring.rabbitmq.host", RABBITMQ::getHost);
+        registry.add("spring.rabbitmq.port", () -> RABBITMQ.getMappedPort(5672));
+        registry.add("spring.rabbitmq.username", RABBITMQ::getAdminUsername);
+        registry.add("spring.rabbitmq.password", RABBITMQ::getAdminPassword);
     }
 
     @MockitoBean
