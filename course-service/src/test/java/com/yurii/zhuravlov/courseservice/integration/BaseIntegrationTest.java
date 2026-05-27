@@ -31,7 +31,6 @@ import java.util.Date;
 @AutoConfigureMockMvc
 @Testcontainers
 @ActiveProfiles("integration-test")
-@DirtiesContext
 public abstract class BaseIntegrationTest extends TestContainersConfig {
 
     @DynamicPropertySource
@@ -74,18 +73,18 @@ public abstract class BaseIntegrationTest extends TestContainersConfig {
     @BeforeEach
     void setUp() {
         Mockito.reset(authClient);
-        courseRepository.deleteAll();
-        lessonRepository.deleteAll();
         questionRepository.deleteAll();
+        lessonRepository.deleteAll();
+        courseRepository.deleteAll();
         redisTemplate.getConnectionFactory().getConnection().serverCommands().flushAll();
     }
 
     @AfterEach
     void tearDown() {
         Mockito.reset(authClient);
-        courseRepository.deleteAll();
-        lessonRepository.deleteAll();
         questionRepository.deleteAll();
+        lessonRepository.deleteAll();
+        courseRepository.deleteAll();
         redisTemplate.getConnectionFactory().getConnection().serverCommands().flushAll();
     }
 

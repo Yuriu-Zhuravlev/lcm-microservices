@@ -29,7 +29,6 @@ import java.util.Date;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureMockMvc
 @ActiveProfiles("integration-test")
-@DirtiesContext
 public abstract class BaseIntegrationTest extends TestContainersConfig {
 
     @DynamicPropertySource
