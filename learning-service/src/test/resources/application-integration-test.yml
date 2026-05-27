@@ -1,0 +1,31 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: true
+    properties:
+      hibernate:
+        default_schema: learning_schema
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  flyway:
+    enabled: true
+    schemas: learning_schema
+    create-schemas: true
+    locations: classpath:db/migration
+  cache:
+    type: redis
+  data:
+    redis:
+      host: localhost
+      port: 6379
+  rabbitmq:
+    listener:
+      simple:
+        retry:
+          enabled: false
+eureka:
+  client:
+    enabled: false
+jwt:
+  secret: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+  expiration: 86400000

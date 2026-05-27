@@ -38,8 +38,8 @@ public class CourseUpdateListener {
     }
 
     private void updateLessonQuiz(CourseUpdatedEvent event){
-        userLessonProgressRepository.deleteByLessonId(event.lessonId());
         enrolmentRepository.updateStatusWithUpdates(event.courseId());
+        userLessonProgressRepository.deleteByLessonId(event.lessonId());
     }
 
     private void removeCourse(CourseUpdatedEvent event){

@@ -43,6 +43,7 @@ public interface EnrolmentRepository extends JpaRepository<Enrolment, Long> {
     List<EnrolmentWithProgressDTO> findByUserIdWithCompletedCount(@Param("userId") Long userId);
 
     @Modifying(clearAutomatically = true)
+    @Transactional
     @Query("""
         UPDATE Enrolment e
         SET e.totalLessonsCount = :newCount,
@@ -52,6 +53,7 @@ public interface EnrolmentRepository extends JpaRepository<Enrolment, Long> {
     void addLessonAndUpdateStatus(@Param("courseId") Long courseId, @Param("newCount") Integer newCount);
 
     @Modifying(clearAutomatically = true)
+    @Transactional
     @Query("""
         UPDATE Enrolment e
         SET e.status = CASE WHEN e.status = 'COMPLETED' THEN 'COMPLETED_WITH_UPDATES' ELSE e.status END

@@ -1,10 +1,9 @@
-package com.yurii.zhuravlov.courseservice.integration;
+package com.yurii.zhuravlov.learningservice.integration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.yurii.zhuravlov.courseservice.client.AuthClient;
-import com.yurii.zhuravlov.courseservice.repo.CourseRepository;
-import com.yurii.zhuravlov.courseservice.repo.LessonRepository;
-import com.yurii.zhuravlov.courseservice.repo.QuestionRepository;
+import com.yurii.zhuravlov.learningservice.client.CourseServiceClient;
+import com.yurii.zhuravlov.learningservice.repo.EnrolmentRepository;
+import com.yurii.zhuravlov.learningservice.repo.UserLessonProgressRepository;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
@@ -21,14 +20,13 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.testcontainers.junit.jupiter.Testcontainers;
+import org.springframework.test.web.servlet.MockMvc;
 
 import javax.crypto.SecretKey;
 import java.util.Date;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureMockMvc
-@Testcontainers
 @ActiveProfiles("integration-test")
 public abstract class BaseIntegrationTest extends TestContainersConfig {
 
@@ -46,7 +44,13 @@ public abstract class BaseIntegrationTest extends TestContainersConfig {
     }
 
     @MockitoBean
-    protected AuthClient authClient;
+    protected CourseServiceClient courseServiceClient;
+
+    @Autowired
+    protected EnrolmentRepository enrolmentRepository;
+
+    @Autowired
+    protected UserLessonProgressRepository userLessonProgressRepository;
 
     @Autowired
     protected RedisTemplate<String, Object> redisTemplate;
@@ -55,35 +59,24 @@ public abstract class BaseIntegrationTest extends TestContainersConfig {
     protected RabbitTemplate rabbitTemplate;
 
     @Autowired
-    protected CourseRepository courseRepository;
-
-    @Autowired
-    protected LessonRepository lessonRepository;
-
-    @Autowired
-    protected QuestionRepository questionRepository;
-
-    @Autowired
-    protected ObjectMapper objectMapper;
+    protected MockMvc mockMvc;
 
     @Value("${jwt.secret}")
     private String jwtSecret;
 
     @BeforeEach
     void setUp() {
-        Mockito.reset(authClient);
-        courseRepository.deleteAll();
-        lessonRepository.deleteAll();
-        questionRepository.deleteAll();
+        Mockito.reset(courseServiceClient);
+        userLessonProgressRepository.deleteAll();
+        enrolmentRepository.deleteAll();
         redisTemplate.getConnectionFactory().getConnection().serverCommands().flushAll();
     }
 
     @AfterEach
     void tearDown() {
-        Mockito.reset(authClient);
-        courseRepository.deleteAll();
-        lessonRepository.deleteAll();
-        questionRepository.deleteAll();
+        Mockito.reset(courseServiceClient);
+        userLessonProgressRepository.deleteAll();
+        enrolmentRepository.deleteAll();
         redisTemplate.getConnectionFactory().getConnection().serverCommands().flushAll();
     }
 
