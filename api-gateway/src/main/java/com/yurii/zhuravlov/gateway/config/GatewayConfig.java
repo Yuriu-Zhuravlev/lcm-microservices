@@ -32,6 +32,7 @@ public class GatewayConfig {
                 .and(route("auth-service")
                         .route(path("/api/auth/**"), http())
                         .before(removeRequestHeader("X-Internal-Service"))
+                        .filter(authFilter)
                         .filter(lb("auth-service"))
                         .build())
                 .and(route("course-service")
