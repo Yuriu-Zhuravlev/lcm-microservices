@@ -1,6 +1,7 @@
 package com.yurii.zhuravlov.courseservice.integration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.yurii.zhuravlov.courseservice.client.AuthClient;
 import com.yurii.zhuravlov.courseservice.repo.CourseRepository;
 import com.yurii.zhuravlov.courseservice.repo.LessonRepository;
 import com.yurii.zhuravlov.courseservice.repo.QuestionRepository;
@@ -9,16 +10,18 @@ import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.mockito.Mockito;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.context.annotation.Import;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import javax.crypto.SecretKey;
@@ -28,7 +31,6 @@ import java.util.Date;
 @AutoConfigureMockMvc
 @Testcontainers
 @ActiveProfiles("integration-test")
-@Import(TestAuthClientConfig.class)
 public abstract class BaseIntegrationTest extends TestContainersConfig {
 
     @DynamicPropertySource
@@ -43,6 +45,9 @@ public abstract class BaseIntegrationTest extends TestContainersConfig {
         registry.add("spring.rabbitmq.username", RABBITMQ::getAdminUsername);
         registry.add("spring.rabbitmq.password", RABBITMQ::getAdminPassword);
     }
+
+    @MockitoBean
+    protected AuthClient authClient;
 
     @Autowired
     protected RedisTemplate<String, Object> redisTemplate;
@@ -67,6 +72,7 @@ public abstract class BaseIntegrationTest extends TestContainersConfig {
 
     @BeforeEach
     void setUp() {
+        Mockito.reset(authClient);
         questionRepository.deleteAll();
         lessonRepository.deleteAll();
         courseRepository.deleteAll();
@@ -75,6 +81,7 @@ public abstract class BaseIntegrationTest extends TestContainersConfig {
 
     @AfterEach
     void tearDown() {
+        Mockito.reset(authClient);
         questionRepository.deleteAll();
         lessonRepository.deleteAll();
         courseRepository.deleteAll();

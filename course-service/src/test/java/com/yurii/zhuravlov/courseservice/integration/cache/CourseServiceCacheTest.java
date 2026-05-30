@@ -10,17 +10,21 @@ import com.yurii.zhuravlov.eventsDto.enums.CourseAction;
 import com.yurii.zhuravlov.requests.CourseRequest;
 import com.yurii.zhuravlov.responses.CourseResponseFull;
 import com.yurii.zhuravlov.responses.CourseResponseShort;
+import com.yurii.zhuravlov.responses.UserResponse;
 import org.junit.jupiter.api.Test;
 import org.springframework.amqp.core.Message;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 
 @SpringBootTest
 class CourseServiceCacheTest extends BaseIntegrationTest {
@@ -32,6 +36,7 @@ class CourseServiceCacheTest extends BaseIntegrationTest {
     void getCourseById_ShouldCacheResult() {
         Course course = courseRepository.save(Course.builder()
                 .title("Spring Boot").description("Learn SB").authorId(1L).build());
+        when(authClient.getUserById(1L)).thenReturn(new UserResponse(1L, "Yurii"));
 
         CourseResponseFull first = courseService.getCourseById(course.getId());
         assertThat(first.title()).isEqualTo("Spring Boot");
@@ -46,6 +51,7 @@ class CourseServiceCacheTest extends BaseIntegrationTest {
     void getCourseShortById_ShouldCacheResult() {
         Course course = courseRepository.save(Course.builder()
                 .title("Docker").description("Learn Docker").authorId(1L).build());
+        when(authClient.getUserById(1L)).thenReturn(new UserResponse(1L, "Yurii"));
 
         CourseResponseShort response = assertDoesNotThrow(() ->
                 courseService.getCourseShortById(course.getId())
@@ -65,6 +71,7 @@ class CourseServiceCacheTest extends BaseIntegrationTest {
     void updateCourse_ShouldEvictCache() {
         Course course = courseRepository.save(Course.builder()
                 .title("Old Title").description("Desc").authorId(1L).build());
+        when(authClient.getUserById(1L)).thenReturn(new UserResponse(1L, "Yurii"));
 
         courseService.getCourseById(course.getId());
 
@@ -73,6 +80,7 @@ class CourseServiceCacheTest extends BaseIntegrationTest {
 
         Course restored = courseRepository.save(Course.builder()
                 .title("Old Title").description("Desc").authorId(1L).build());
+        when(authClient.getUserById(1L)).thenReturn(new UserResponse(1L, "Yurii"));
         courseService.getCourseById(restored.getId());
 
         courseService.updateCourse(restored.getId(), new CourseRequest("New Title", "Desc"), 1L);
@@ -87,6 +95,7 @@ class CourseServiceCacheTest extends BaseIntegrationTest {
     void deleteCourse_ShouldEvictCacheAndPublishEvent() {
         Course course = courseRepository.save(Course.builder()
                 .title("To Delete").description("Desc").authorId(1L).build());
+        when(authClient.getUserById(1L)).thenReturn(new UserResponse(1L, "Yurii"));
 
         courseService.getCourseById(course.getId());
 
@@ -95,6 +104,7 @@ class CourseServiceCacheTest extends BaseIntegrationTest {
 
         Course restored = courseRepository.save(Course.builder()
                 .title("To Delete").description("Desc").authorId(1L).build());
+        when(authClient.getUserById(1L)).thenReturn(new UserResponse(1L, "Yurii"));
         courseService.getCourseById(restored.getId());
 
         String testQueue = "test.queue." + UUID.randomUUID();
@@ -131,6 +141,9 @@ class CourseServiceCacheTest extends BaseIntegrationTest {
         Course c2 = courseRepository.save(Course.builder()
                 .title("C2").description("D2").authorId(2L).build());
 
+        when(authClient.getUsersByIds(any())).thenReturn(
+                Set.of(new UserResponse(1L, "Yurii"), new UserResponse(2L, "Bob")));
+
         List<CourseResponseShort> first = courseService.findByIds(List.of(c1.getId(), c2.getId()));
         assertThat(first).hasSize(2);
 
@@ -138,6 +151,7 @@ class CourseServiceCacheTest extends BaseIntegrationTest {
         assertThat(redisTemplate.opsForValue().get("courses-short-no-lessons::" + c2.getId())).isNotNull();
 
         courseRepository.deleteAll();
+        when(authClient.getUsersByIds(any())).thenReturn(Set.of());
 
         List<CourseResponseShort> second = courseService.findByIds(List.of(c1.getId(), c2.getId()));
         assertThat(second).hasSize(2);

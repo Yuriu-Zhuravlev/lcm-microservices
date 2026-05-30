@@ -4,6 +4,7 @@ import com.yurii.zhuravlov.courseservice.model.Course;
 import com.yurii.zhuravlov.courseservice.model.Lesson;
 import com.yurii.zhuravlov.requests.LessonCreteRequest;
 import com.yurii.zhuravlov.requests.LessonUpdateRequest;
+import com.yurii.zhuravlov.responses.UserResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,6 +12,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -32,6 +34,7 @@ class LessonControllerIntegrationTest extends BaseIntegrationTest {
         lesson = lessonRepository.save(Lesson.builder()
                 .title("Lesson 1").htmlContent("<p>content</p>")
                 .course(course).orderIndex(1).build());
+        when(authClient.getUserById(1L)).thenReturn(new UserResponse(1L, "Yurii"));
     }
 
     @Test
