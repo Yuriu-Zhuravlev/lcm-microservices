@@ -264,12 +264,19 @@ Integration tests use **Testcontainers** to spin up real PostgreSQL, Redis, and 
 
 ## CI/CD
 
-A GitHub Actions pipeline runs on every push to `master`:
+A GitHub Actions pipeline runs on every push to `master`, but only rebuilds what actually changed:
 
-1. **Test** — runs the full test suite with JDK 21
-2. **Build & Push** — builds Docker images and pushes them to GitHub Container Registry (GHCR)
+- Changes in `pom.xml`, `common-dto`, or the workflow itself → full rebuild of all services
+- Changes in a single service → only that service is tested and pushed
+
+**Jobs:**
+1. **detect-changes** — uses `dorny/paths-filter` to determine which modules were affected
+2. **test** — runs Maven tests only for the affected services (`-pl common-dto,<service> -am`)
+3. **build-and-push** — builds Docker images and pushes them to GitHub Container Registry (GHCR)
 
 Images are tagged `latest` and referenced in `docker-compose.yml`, so `docker compose up` always pulls the most recent build.
+
+**Actions used:** `actions/checkout@v6`, `actions/setup-java@v5`, `dorny/paths-filter@v4`, `docker/build-push-action@v5`
 
 ---
 

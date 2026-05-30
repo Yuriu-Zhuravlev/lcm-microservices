@@ -2,7 +2,6 @@ package com.yurii.zhuravlov.courseservice.integration;
 
 import com.yurii.zhuravlov.courseservice.model.Course;
 import com.yurii.zhuravlov.requests.CourseRequest;
-import com.yurii.zhuravlov.responses.UserResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,7 +10,6 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -29,7 +27,6 @@ class CourseControllerIntegrationTest extends BaseIntegrationTest {
         token = generateToken(1L, "yurii");
         course = courseRepository.save(Course.builder()
                 .title("Spring Boot Course").description("Learn Spring Boot").authorId(1L).build());
-        when(authClient.getUserById(1L)).thenReturn(new UserResponse(1L, "Yurii"));
     }
 
     @Test

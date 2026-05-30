@@ -13,7 +13,6 @@ import com.yurii.zhuravlov.eventsDto.CourseUpdatedEvent;
 import com.yurii.zhuravlov.eventsDto.enums.CourseAction;
 import com.yurii.zhuravlov.requests.OptionRequest;
 import com.yurii.zhuravlov.requests.QuestionRequest;
-import com.yurii.zhuravlov.responses.UserResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.amqp.core.Message;
@@ -25,7 +24,6 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.when;
 
 @SpringBootTest
 class QuestionServiceCacheTest extends BaseIntegrationTest {
@@ -47,7 +45,6 @@ class QuestionServiceCacheTest extends BaseIntegrationTest {
         lesson = lessonRepository.save(Lesson.builder()
                 .title("Lesson").htmlContent("<p>html</p>")
                 .course(course).orderIndex(1).build());
-        when(authClient.getUserById(1L)).thenReturn(new UserResponse(1L, "Yurii"));
     }
 
     private QuestionRequest sampleRequest() {
