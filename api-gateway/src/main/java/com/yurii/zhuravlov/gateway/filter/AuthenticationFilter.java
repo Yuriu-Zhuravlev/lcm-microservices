@@ -20,7 +20,7 @@ public class AuthenticationFilter implements HandlerFilterFunction<ServerRespons
     public ServerResponse filter(ServerRequest request, @NonNull HandlerFunction<ServerResponse> next) throws Exception {
         String path = request.uri().getPath();
 
-        if (path.contains("/api/auth/login") || path.contains("/api/auth/register")) {
+        if (path.contains("/api/auth/login") || path.contains("/api/auth/register") || path.contains("/actuator/health")) {
             return next.handle(request);
         }
 

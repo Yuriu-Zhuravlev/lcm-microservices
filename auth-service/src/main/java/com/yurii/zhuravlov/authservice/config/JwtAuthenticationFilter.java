@@ -31,7 +31,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     ) throws ServletException, IOException {
 
         String path = request.getServletPath();
-        if (path.contains("/v3/api-docs") || path.contains("/swagger-ui")) {
+        if (path.contains("/v3/api-docs") || path.contains("/swagger-ui") || path.contains("/actuator/health")) {
             filterChain.doFilter(request, response);
             return;
         }

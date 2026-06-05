@@ -79,3 +79,9 @@ springdoc:
   swagger-ui:
     enabled: true
     path: /api/learning/swagger-ui.html
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "health,info,metrics"
