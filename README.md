@@ -249,6 +249,7 @@ Writing `@DataJpaTest`, `@WebMvcTest`, and full `@SpringBootTest` integration te
 
 **Redis caching is easy to add and easy to get wrong.**
 Adding `@Cacheable` takes five minutes. Figuring out when to evict — and making sure `@CacheEvict` fires on every write path, including edge cases — takes much longer. I learned that caching is a consistency problem first and a performance optimization second.
+
 ---
 
 ## Running Locally
