@@ -27,6 +27,8 @@ Redis                            ← Token & query caching across all services
 PostgreSQL                       ← Shared DB with isolated schemas per service
 ```
 
+![Architecture](docs/lcm_architecture.svg)
+
 Each service is independently deployable, uses its own DB schema, and registers itself with Eureka. The API Gateway performs JWT pre-validation before routing — downstream services also independently validate the token using the same shared secret, so every layer enforces security on its own.
 
 ---
@@ -223,6 +225,23 @@ Spring Cloud Netflix Eureka registry. All services register on startup; the Gate
 
 **Flyway manages schema migrations.** The Course and Learning services use versioned SQL migrations instead of Hibernate `ddl-auto`, making schema changes trackable and reversible.
 
+---
+
+## What I learned
+**Designing for failure, not just for the happy path.**
+Building event-driven consistency between Course and Learning services forced me to think beyond the normal request-response cycle. When a lesson is deleted, the Learning Service needs to react — but it can't rely on a synchronous call that might fail or time out. Implementing a RabbitMQ fanout exchange taught me that decoupling isn't just an architectural pattern; it's a decision about where you put your failure handling.
+
+**Defence in depth is not paranoia.**
+I initially validated JWT only at the Gateway level — it seemed enough. Then I realised: if the Gateway misconfigures a route, or a service gets called directly in a staging environment, there's nothing stopping an unauthenticated request from going through. Adding independent token validation in each downstream service felt redundant at first, but it's the difference between trusting your perimeter and actually being secure.
+
+**Shared database, isolated schemas — a conscious tradeoff.**
+I chose one PostgreSQL instance with separate schemas instead of fully isolated databases per service. It simplified local setup and made Flyway migrations easier to reason about. But it also means services share infrastructure — a lesson in understanding that "microservices best practices" always come with context. This setup makes sense for a solo project; a production system with team ownership per service would need stricter isolation.
+
+**Testing at multiple levels changes how you write code.**
+Writing `@DataJpaTest`, `@WebMvcTest`, and full `@SpringBootTest` integration tests with Testcontainers made me structure code differently from the start — because code that's hard to test is usually code with too many responsibilities. The 57 test files weren't a goal; they were a side effect of building things in a way that could actually be verified.
+
+**Redis caching is easy to add and easy to get wrong.**
+Adding `@Cacheable` takes five minutes. Figuring out when to evict — and making sure `@CacheEvict` fires on every write path, including edge cases — takes much longer. I learned that caching is a consistency problem first and a performance optimization second.
 ---
 
 ## Running Locally

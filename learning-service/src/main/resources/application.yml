@@ -8,8 +8,8 @@ spring:
 
   datasource:
     url: jdbc:postgresql://localhost:5433/lms_db?currentSchema=learning_schema&options=-c timezone=UTC
-    username: user
-    password: password
+    username: ${SPRING_DATASOURCE_PASSWORD:user}
+    password: ${SPRING_DATASOURCE_USERNAME:password}
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -33,10 +33,10 @@ spring:
 
 
   rabbitmq:
-    host: localhost
+    host: ${SPRING_RABBITMQ_HOST:localhost}
     port: 5672
-    username: guest
-    password: guest
+    username: ${SPRING_RABBITMQ_USERNAME:guest}
+    password: ${SPRING_RABBITMQ_PASSWORD:guest}
     listener:
       simple:
         retry:
@@ -69,7 +69,7 @@ logging:
     org.hibernate.orm.jdbc.bind: TRACE
 
 jwt:
-  secret: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+  secret: ${JWT_SECRET:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
   expiration: 86400000
 
 springdoc:
