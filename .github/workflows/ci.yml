@@ -28,8 +28,19 @@ jobs:
       learning: ${{ steps.changes.outputs.learning }}
       gateway: ${{ steps.changes.outputs.gateway }}
       eureka: ${{ steps.changes.outputs.eureka }}
+      last-run-failed: ${{ steps.last-run.outputs.failed }}
     steps:
       - uses: actions/checkout@v6
+
+      - name: Check last run status
+        id: last-run
+        run: |
+          STATUS=$(gh api repos/${{ github.repository }}/actions/workflows/ci.yml/runs \
+            --jq '.workflow_runs | map(select(.head_sha != "${{ github.sha }}")) | first | .conclusion' \
+            2>/dev/null || echo "success")
+          echo "failed=$([[ "$STATUS" != "success" ]] && echo true || echo false)" >> $GITHUB_OUTPUT
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: dorny/paths-filter@v4
         id: changes
@@ -65,23 +76,23 @@ jobs:
           cache: maven
 
       - name: Test all (common-dto or pom changed)
-        if: needs.detect-changes.outputs.rebuild-all == 'true'
+        if: needs.detect-changes.outputs.rebuild-all == 'true'|| needs.detect-changes.outputs.last-run-failed == 'true'
         run: mvn test -pl common-dto,auth-service,course-service,learning-service,api-gateway -am
 
       - name: Test auth-service
-        if: needs.detect-changes.outputs.rebuild-all != 'true' && needs.detect-changes.outputs.auth == 'true'
+        if: needs.detect-changes.outputs.rebuild-all != 'true' && needs.detect-changes.outputs.auth == 'true' && needs.detect-changes.outputs.last-run-failed != 'true'
         run: mvn test -pl common-dto,auth-service -am
 
       - name: Test course-service
-        if: needs.detect-changes.outputs.rebuild-all != 'true' && needs.detect-changes.outputs.course == 'true'
+        if: needs.detect-changes.outputs.rebuild-all != 'true' && needs.detect-changes.outputs.course == 'true' && needs.detect-changes.outputs.last-run-failed != 'true'
         run: mvn test -pl common-dto,course-service -am
 
       - name: Test learning-service
-        if: needs.detect-changes.outputs.rebuild-all != 'true' && needs.detect-changes.outputs.learning == 'true'
+        if: needs.detect-changes.outputs.rebuild-all != 'true' && needs.detect-changes.outputs.learning == 'true' && needs.detect-changes.outputs.last-run-failed != 'true'
         run: mvn test -pl common-dto,learning-service -am
 
       - name: Test api-gateway
-        if: needs.detect-changes.outputs.rebuild-all != 'true' && needs.detect-changes.outputs.gateway == 'true'
+        if: needs.detect-changes.outputs.rebuild-all != 'true' && needs.detect-changes.outputs.gateway == 'true' && needs.detect-changes.outputs.last-run-failed != 'true'
         run: mvn test -pl common-dto,api-gateway -am
 
   build-and-push:
@@ -125,7 +136,7 @@ jobs:
           tags: ${{ env.REGISTRY }}/${{ env.REPO_LOWER }}/eureka-server:${{ env.IMAGE_TAG }}
 
       - name: Build and Push api-gateway
-        if: needs.detect-changes.outputs.rebuild-all == 'true' || needs.detect-changes.outputs.gateway == 'true'
+        if: needs.detect-changes.outputs.rebuild-all == 'true' || needs.detect-changes.outputs.gateway == 'true' || needs.detect-changes.outputs.last-run-failed == 'true'
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -134,7 +145,7 @@ jobs:
           tags: ${{ env.REGISTRY }}/${{ env.REPO_LOWER }}/api-gateway:${{ env.IMAGE_TAG }}
 
       - name: Build and Push auth-service
-        if: needs.detect-changes.outputs.rebuild-all == 'true' || needs.detect-changes.outputs.auth == 'true'
+        if: needs.detect-changes.outputs.rebuild-all == 'true' || needs.detect-changes.outputs.auth == 'true' || needs.detect-changes.outputs.last-run-failed == 'true'
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -143,7 +154,7 @@ jobs:
           tags: ${{ env.REGISTRY }}/${{ env.REPO_LOWER }}/auth-service:${{ env.IMAGE_TAG }}
 
       - name: Build and Push course-service
-        if: needs.detect-changes.outputs.rebuild-all == 'true' || needs.detect-changes.outputs.course == 'true'
+        if: needs.detect-changes.outputs.rebuild-all == 'true' || needs.detect-changes.outputs.course == 'true' || needs.detect-changes.outputs.last-run-failed == 'true'
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -152,7 +163,7 @@ jobs:
           tags: ${{ env.REGISTRY }}/${{ env.REPO_LOWER }}/course-service:${{ env.IMAGE_TAG }}
 
       - name: Build and Push learning-service
-        if: needs.detect-changes.outputs.rebuild-all == 'true' || needs.detect-changes.outputs.learning == 'true'
+        if: needs.detect-changes.outputs.rebuild-all == 'true' || needs.detect-changes.outputs.learning == 'true' || needs.detect-changes.outputs.last-run-failed == 'true'
         uses: docker/build-push-action@v5
         with:
           context: .
