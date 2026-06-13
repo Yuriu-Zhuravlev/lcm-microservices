@@ -1,3 +1,10 @@
+![Java](https://img.shields.io/badge/Java-21-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)
+![Spring Boot](https://img.shields.io/badge/Spring_Boot-4-6DB33F?style=for-the-badge&logo=spring&logoColor=white)
+![Tests](https://img.shields.io/badge/Tests-57-blue?style=for-the-badge)
+![Docker](https://img.shields.io/badge/Docker-enabled-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+
+[![Build](https://github.com/Yuriu-Zhuravlev/lcm-microservices/actions/workflows/ci.yml/badge.svg)](https://github.com/Yuriu-Zhuravlev/lcm-microservices/actions/workflows/ci.yml)
+
 # LCM — Learning Content Management Platform
 
 A backend platform for creating and completing online courses, built with a microservices architecture on **Java 21 + Spring Boot 4**. The system supports course authoring, student enrollment, lesson-by-lesson progress tracking, and quiz submission — all behind a single API Gateway with JWT-based authentication.
@@ -242,6 +249,7 @@ Writing `@DataJpaTest`, `@WebMvcTest`, and full `@SpringBootTest` integration te
 
 **Redis caching is easy to add and easy to get wrong.**
 Adding `@Cacheable` takes five minutes. Figuring out when to evict — and making sure `@CacheEvict` fires on every write path, including edge cases — takes much longer. I learned that caching is a consistency problem first and a performance optimization second.
+
 ---
 
 ## Running Locally
