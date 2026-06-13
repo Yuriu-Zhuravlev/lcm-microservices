@@ -1,0 +1,137 @@
+# ── Global ──────────────────────────────────────
+global:
+  imageRegistry: "ghcr.io/yuriu-zhuravlev/lcm-microservices"
+  imageTag: "latest"
+
+# ── Eureka ─────────────────────────────────────────
+eurekaUrl: "http://eureka-server:8761/eureka/"
+eureka:
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "50m"
+    limits:
+      memory: "384Mi"
+      cpu: "500m"
+
+# ── JWT ─────────────────────────────────────────
+
+jwtSecret: "CHANGE_ME"
+
+# ── Auth Service ───────────────────────────────────
+authService:
+  replicas: 1
+  image: "auth-service"
+  port: 8081
+  datasourceUrl: "jdbc:postgresql://postgres-db:5432/lms_db?currentSchema=auth_schema&options=-c%20timezone=UTC"
+  resources:
+    requests:
+      memory: "384Mi"
+      cpu: "100m"
+    limits:
+      memory: "512Mi"
+      cpu: "1000m"
+  hpa:
+    enabled: true
+    minReplicas: 1
+    maxReplicas: 3
+    targetCPUUtilizationPercentage: 70
+
+# ── Course Service ─────────────────────────────────
+courseService:
+  replicas: 1
+  image: "course-service"
+  port: 8082
+  datasourceUrl: "jdbc:postgresql://postgres-db:5432/lms_db?currentSchema=courses_schema&options=-c%20timezone=UTC"
+  resources:
+    requests:
+      memory: "384Mi"
+      cpu: "100m"
+    limits:
+      memory: "576Mi"
+      cpu: "1000m"
+  hpa:
+    enabled: true
+    minReplicas: 1
+    maxReplicas: 3
+    targetCPUUtilizationPercentage: 70
+
+# ── Learning Service ───────────────────────────────
+learningService:
+  replicas: 1
+  image: "learning-service"
+  port: 8083
+  datasourceUrl: "jdbc:postgresql://postgres-db:5432/lms_db?currentSchema=learning_schema&options=-c%20timezone=UTC"
+  resources:
+    requests:
+      memory: "384Mi"
+      cpu: "100m"
+    limits:
+      memory: "576Mi"
+      cpu: "1000m"
+  hpa:
+    enabled: true
+    minReplicas: 1
+    maxReplicas: 3
+    targetCPUUtilizationPercentage: 70
+
+# ── API Gateway ────────────────────────────────────
+apiGateway:
+  replicas: 1
+  image: "api-gateway"
+  port: 8080
+  service:
+    type: NodePort
+    nodePort: 30080
+  resources:
+    requests:
+      memory: "192Mi"
+      cpu: "50m"
+    limits:
+      memory: "320Mi"
+      cpu: "800m"
+  hpa:
+    enabled: true
+    minReplicas: 1
+    maxReplicas: 3
+    targetCPUUtilizationPercentage: 70
+
+# ── Postgres ───────────────────────────────────────
+postgres:
+  image: "postgres:16"
+  storage: "1Gi"
+  user: "user"
+  password: "password"
+  db: "lms_db"
+  resources:
+    requests:
+      memory: "128Mi"
+      cpu: "100m"
+    limits:
+      memory: "256Mi"
+      cpu: "500m"
+
+# ── RabbitMQ ───────────────────────────────────────
+rabbitmq:
+  image: "rabbitmq:3-management"
+  user: "guest"
+  password: "guest"
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "200m"
+    limits:
+      memory: "384Mi"
+      cpu: "600m"
+
+# ── Redis ───────────────────────────────────────
+
+redis:
+  image: "redis:7.2-alpine"
+  resources:
+    requests:
+      memory: "32Mi"
+      cpu: "25m"
+    limits:
+      memory: "64Mi"
+      cpu: "200m"

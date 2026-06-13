@@ -31,7 +31,6 @@ spring:
         cache-null-values: false
         time-to-live: 3600000
 
-
   rabbitmq:
     host: ${SPRING_RABBITMQ_HOST:localhost}
     port: 5672
@@ -50,7 +49,7 @@ spring:
 
   flyway:
     enabled: true
-    schemas:  learning_schema
+    schemas: learning_schema
     locations: classpath:db/migration
     baseline-on-migrate: true
 
@@ -67,6 +66,7 @@ logging:
   level:
     org.hibernate.SQL: DEBUG
     org.hibernate.orm.jdbc.bind: TRACE
+    io.github.resilience4j: DEBUG
 
 jwt:
   secret: ${JWT_SECRET:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
@@ -84,4 +84,36 @@ management:
   endpoints:
     web:
       exposure:
-        include: "health,info,metrics"
+        include: "health,info,metrics,circuitbreakers,circuitbreakerevents"
+  health:
+    circuitbreakers:
+      enabled: true
+
+feign:
+  circuitbreaker:
+    enabled: true
+
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        slow-call-duration-threshold: 2s
+        slow-call-rate-threshold: 80
+        wait-duration-in-open-state: 10s
+        permitted-number-of-calls-in-half-open-state: 3
+        automatic-transition-from-open-to-half-open-enabled: true
+    instances:
+      course-service:
+        base-config: default
+
+  timelimiter:
+    configs:
+      default:
+        timeout-duration: 3s
+        cancel-running-future: true
+    instances:
+      course-service:
+        base-config: default

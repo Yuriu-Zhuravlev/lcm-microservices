@@ -1,5 +1,6 @@
 package com.yurii.zhuravlov.learningservice.client;
 
+import com.yurii.zhuravlov.learningservice.client.fallback.CourseServiceClientFallback;
 import com.yurii.zhuravlov.responses.CourseResponseFull;
 import com.yurii.zhuravlov.responses.CourseResponseShort;
 import com.yurii.zhuravlov.responses.LessonResponseFull;
@@ -11,7 +12,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
 
-@FeignClient(name = "course-service")
+@FeignClient(name = "course-service", fallback = CourseServiceClientFallback.class)
 public interface CourseServiceClient {
 
     @GetMapping("/api/courses/lessons/internal/{id}")

@@ -3,6 +3,7 @@ package com.yurii.zhuravlov.learningservice.handler;
 import com.yurii.zhuravlov.errors.ErrorResponse;
 import com.yurii.zhuravlov.learningservice.exceptions.LearningServiceException;
 import feign.FeignException;
+import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,6 +23,18 @@ public class GlobalExceptionHandler {
         );
 
         return new ResponseEntity<>(error, e.getStatus());
+    }
+
+    @ExceptionHandler(CallNotPermittedException.class)
+    public ResponseEntity<ErrorResponse> handleCallNotPermitted(CallNotPermittedException e, HttpServletRequest request) {
+        ErrorResponse error = new ErrorResponse(
+                "Service Temporarily Unavailable",
+                "Circuit Breaker if open for '" + e.getCausingCircuitBreakerName()
+                        + "'. Service temporary unavailable.",
+                request.getRequestURI(),
+                HttpStatus.SERVICE_UNAVAILABLE.value()
+        );
+        return new ResponseEntity<>(error, HttpStatus.SERVICE_UNAVAILABLE);
     }
 
     @ExceptionHandler(Exception.class)

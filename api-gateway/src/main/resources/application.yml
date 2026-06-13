@@ -9,6 +9,7 @@ spring:
     gateway:
       mvc:
         enabled: true
+        # Маршрути описані в GatewayConfig.java — тут не потрібні
 
 eureka:
   client:
@@ -26,6 +27,7 @@ logging:
   level:
     org.springframework.cloud.gateway: TRACE
     org.springframework.web: DEBUG
+    io.github.resilience4j: DEBUG
 
 springdoc:
   swagger-ui:
@@ -47,4 +49,39 @@ management:
   endpoints:
     web:
       exposure:
-        include: "health,info,metrics"
+        include: "health,info,metrics,circuitbreakers,circuitbreakerevents"
+  health:
+    circuitbreakers:
+      enabled: true
+
+# ─── Resilience4j ─────────────────────────────────────────────────────────────
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        slow-call-duration-threshold: 2s
+        slow-call-rate-threshold: 80
+        wait-duration-in-open-state: 10s
+        permitted-number-of-calls-in-half-open-state: 3
+        automatic-transition-from-open-to-half-open-enabled: true
+    instances:
+      auth-service:
+        base-config: default
+      course-service:
+        base-config: default
+      learning-service:
+        base-config: default
+  timelimiter:
+    configs:
+      default:
+        timeout-duration: 5s
+    instances:
+      auth-service:
+        base-config: default
+      course-service:
+        base-config: default
+      learning-service:
+        base-config: default

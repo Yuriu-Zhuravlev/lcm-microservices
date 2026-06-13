@@ -1,0 +1,12 @@
+apiVersion: v2
+name: lms-chart
+description: LMS Microservices — Kubernetes Helm Chart
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+keywords:
+  - lms
+  - spring-boot
+  - microservices
+maintainers:
+  - name: Yurii Zhuravlev

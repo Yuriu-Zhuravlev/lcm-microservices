@@ -1,0 +1,39 @@
+{{- $services := list "authService" "courseService" "learningService" "apiGateway" -}}
+{{- range $svcKey := $services -}}
+{{- $svc := index $.Values $svcKey -}}
+{{- if and $svc.hpa $svc.hpa.enabled }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ $svcKey | kebabcase }}-hpa
+  namespace: {{ $.Values.namespace | default "lms" }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ $svcKey | kebabcase }}
+  minReplicas: {{ $svc.hpa.minReplicas }}
+  maxReplicas: {{ $svc.hpa.maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ $svc.hpa.targetCPUUtilizationPercentage }}
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 120
+      policies:
+        - type: Pods
+          value: 1
+          periodSeconds: 60
+    scaleUp:
+      stabilizationWindowSeconds: 90
+      policies:
+        - type: Pods
+          value: 1
+          periodSeconds: 60
+---
+{{- end }}
+{{- end }}

@@ -1,0 +1,90 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: course-service-config
+  namespace: {{ include "lms.namespace" . }}
+  labels:
+    {{- include "lms.labels" . | nindent 4 }}
+data:
+  SPRING_DATASOURCE_URL: {{ .Values.courseService.datasourceUrl | quote }}
+  SPRING_DATA_REDIS_HOST: "redis"
+  SPRING_DATA_REDIS_PORT: "6379"
+  EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: {{ .Values.eurekaUrl | quote }}
+  SPRING_RABBITMQ_HOST: "rabbitmq"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: course-service-secret
+  namespace: {{ include "lms.namespace" . }}
+type: Opaque
+stringData:
+  SPRING_DATASOURCE_USERNAME: {{ .Values.postgres.user | quote }}
+  SPRING_DATASOURCE_PASSWORD: {{ .Values.postgres.password | quote }}
+  JWT_SECRET: {{ .Values.jwtSecret | quote }}
+  SPRING_RABBITMQ_USERNAME: {{ .Values.rabbitmq.user | quote }}
+  SPRING_RABBITMQ_PASSWORD: {{ .Values.rabbitmq.password | quote }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: course-service
+  namespace: {{ include "lms.namespace" . }}
+spec:
+  replicas: {{ .Values.courseService.replicas }}
+  selector:
+    matchLabels:
+      app: course-service
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: course-service
+    spec:
+      initContainers:
+        - name: wait-for-deps
+          image: busybox:1.36
+          command: ['sh', '-c', 'until nc -z postgres-db 5432 && nc -z redis 6379 && nc -z eureka-server 8761 && nc -z rabbitmq 5672; do sleep 3; done']
+      containers:
+        - name: course-service
+          image: {{ .Values.global.imageRegistry }}/{{ .Values.courseService.image }}:{{ .Values.global.imageTag }}
+          ports:
+              - containerPort: {{ .Values.courseService.port }}
+          envFrom:
+            - configMapRef:
+                name: course-service-config
+            - secretRef:
+                name: course-service-secret
+          resources:
+            {{- toYaml .Values.courseService.resources | nindent 12 }}
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: {{ .Values.courseService.port }}
+            initialDelaySeconds: 40
+            periodSeconds: 10
+            failureThreshold: 6
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: {{ .Values.courseService.port }}
+            initialDelaySeconds: 90
+            periodSeconds: 15
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: course-service
+  namespace: {{ include "lms.namespace" . }}
+spec:
+  type: ClusterIP
+  selector:
+    app: course-service
+  ports:
+    - port: {{ .Values.courseService.port }}
+      targetPort: {{ .Values.courseService.port }}
