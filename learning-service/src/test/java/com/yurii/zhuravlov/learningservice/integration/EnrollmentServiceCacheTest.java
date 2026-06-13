@@ -9,9 +9,10 @@ import com.yurii.zhuravlov.requests.QuizSubmitRequest;
 import com.yurii.zhuravlov.responses.CourseResponseShort;
 import com.yurii.zhuravlov.responses.ListEnrollmentResponses;
 import com.yurii.zhuravlov.responses.QuizCorrectAnswersResponse;
+import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -26,7 +27,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@SpringBootTest
+@TestMethodOrder(MethodOrderer.Random.class)
 class EnrollmentServiceCacheTest extends BaseIntegrationTest {
 
     @Autowired

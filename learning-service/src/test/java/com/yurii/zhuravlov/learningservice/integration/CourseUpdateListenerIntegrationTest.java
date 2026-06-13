@@ -12,7 +12,6 @@ import com.yurii.zhuravlov.responses.ListEnrollmentResponses;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -23,7 +22,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@SpringBootTest
 class CourseUpdateListenerIntegrationTest extends BaseIntegrationTest {
 
     @Autowired

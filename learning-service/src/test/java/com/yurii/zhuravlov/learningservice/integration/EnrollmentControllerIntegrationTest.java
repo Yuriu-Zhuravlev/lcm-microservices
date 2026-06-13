@@ -6,7 +6,6 @@ import com.yurii.zhuravlov.responses.CourseResponseFull;
 import com.yurii.zhuravlov.responses.CourseResponseShort;
 import com.yurii.zhuravlov.responses.UserResponse;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -16,7 +15,6 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest
 class EnrollmentControllerIntegrationTest extends BaseIntegrationTest {
 
     private static final Long USER_ID = 1L;
