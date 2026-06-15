@@ -17,7 +17,9 @@ metadata:
   name: api-gateway
   namespace: {{ include "lms.namespace" . }}
 spec:
+  {{- if not .Values.apiGateway.hpa.enabled }}
   replicas: {{ .Values.apiGateway.replicas }}
+  {{- end }}
   selector:
     matchLabels:
       app: api-gateway

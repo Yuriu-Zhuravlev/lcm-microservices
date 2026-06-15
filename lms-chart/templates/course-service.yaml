@@ -31,7 +31,9 @@ metadata:
   name: course-service
   namespace: {{ include "lms.namespace" . }}
 spec:
+  {{- if not .Values.courseService.hpa.enabled }}
   replicas: {{ .Values.courseService.replicas }}
+  {{- end }}
   selector:
     matchLabels:
       app: course-service

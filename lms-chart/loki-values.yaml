@@ -24,3 +24,16 @@ grafana:
     requests:
       cpu: "100m"
       memory: "256Mi"
+
+prometheus:
+  enabled: true
+  server:
+    resources:
+      limits:
+        cpu: "500m"
+        memory: "512Mi"
+      requests:
+        cpu: "100m"
+        memory: "256Mi"
+  alertmanager:
+    enabled: false

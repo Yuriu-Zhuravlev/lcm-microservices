@@ -28,7 +28,9 @@ metadata:
   name: auth-service
   namespace: {{ include "lms.namespace" . }}
 spec:
+  {{- if not .Values.authService.hpa.enabled }}
   replicas: {{ .Values.authService.replicas }}
+  {{- end }}
   selector:
     matchLabels:
       app: auth-service

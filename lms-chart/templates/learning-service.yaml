@@ -31,7 +31,9 @@ metadata:
   name: learning-service
   namespace: {{ include "lms.namespace" . }}
 spec:
+  {{- if not .Values.learningService.hpa.enabled }}
   replicas: {{ .Values.learningService.replicas }}
+  {{- end }}
   selector:
     matchLabels:
       app: learning-service
