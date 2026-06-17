@@ -4,10 +4,15 @@ global:
   imageTag: "latest"
   imagePullPolicy: Always
   redis:
-    host: "redis"
+    host: "lms-redis.ggel71.0001.euc1.cache.amazonaws.com"
     port: "6379"
   postgres:
-    host: "postgres-db"
+    host: "lms-postgres.cde0206gqz15.eu-central-1.rds.amazonaws.com"
+
+# ── External Secrets Operator ──────────────────
+eso:
+  enabled: true
+  iamRoleArn: "arn:aws:iam::479585724485:role/eksctl-lms-cluster-addon-iamserviceaccount-lm-Role1-TYpjBW22Frmn"
 
 # ── Eureka ─────────────────────────────────────────
 eurekaUrl: "http://eureka-server:8761/eureka/"
@@ -20,15 +25,12 @@ eureka:
       memory: "384Mi"
       cpu: "500m"
 
-# ── JWT ─────────────────────────────────────────
-jwtSecret: "CHANGE_ME"
-
 # ── Auth Service ───────────────────────────────────
 authService:
   replicas: 1
   image: "auth-service"
   port: 8081
-  datasourceUrl: "jdbc:postgresql://postgres-db:5432/lms_db?currentSchema=auth_schema&options=-c%20timezone=UTC"
+  datasourceUrl: "jdbc:postgresql://lms-postgres.cde0206gqz15.eu-central-1.rds.amazonaws.com:5432/lms?currentSchema=auth_schema&options=-c%20timezone=UTC"
   resources:
     requests:
       memory: "384Mi"
@@ -38,8 +40,8 @@ authService:
       cpu: "1000m"
   hpa:
     enabled: true
-    minReplicas: 1
-    maxReplicas: 3
+    minReplicas: 2
+    maxReplicas: 6
     targetCPUUtilizationPercentage: 70
 
 # ── Course Service ─────────────────────────────────
@@ -47,7 +49,7 @@ courseService:
   replicas: 1
   image: "course-service"
   port: 8082
-  datasourceUrl: "jdbc:postgresql://postgres-db:5432/lms_db?currentSchema=courses_schema&options=-c%20timezone=UTC"
+  datasourceUrl: "jdbc:postgresql://lms-postgres.cde0206gqz15.eu-central-1.rds.amazonaws.com:5432/lms?currentSchema=courses_schema&options=-c%20timezone=UTC"
   resources:
     requests:
       memory: "384Mi"
@@ -57,8 +59,8 @@ courseService:
       cpu: "1000m"
   hpa:
     enabled: true
-    minReplicas: 1
-    maxReplicas: 3
+    minReplicas: 2
+    maxReplicas: 6
     targetCPUUtilizationPercentage: 70
 
 # ── Learning Service ───────────────────────────────
@@ -66,7 +68,7 @@ learningService:
   replicas: 1
   image: "learning-service"
   port: 8083
-  datasourceUrl: "jdbc:postgresql://postgres-db:5432/lms_db?currentSchema=learning_schema&options=-c%20timezone=UTC"
+  datasourceUrl: "jdbc:postgresql://lms-postgres.cde0206gqz15.eu-central-1.rds.amazonaws.com:5432/lms?currentSchema=learning_schema&options=-c%20timezone=UTC"
   resources:
     requests:
       memory: "384Mi"
@@ -76,8 +78,8 @@ learningService:
       cpu: "1000m"
   hpa:
     enabled: true
-    minReplicas: 1
-    maxReplicas: 3
+    minReplicas: 2
+    maxReplicas: 6
     targetCPUUtilizationPercentage: 70
 
 # ── API Gateway ────────────────────────────────────
@@ -86,8 +88,7 @@ apiGateway:
   image: "api-gateway"
   port: 8080
   service:
-    type: NodePort
-    nodePort: 30080
+    type: LoadBalancer
   resources:
     requests:
       memory: "192Mi"
@@ -97,31 +98,17 @@ apiGateway:
       cpu: "800m"
   hpa:
     enabled: true
-    minReplicas: 1
-    maxReplicas: 3
+    minReplicas: 2
+    maxReplicas: 6
     targetCPUUtilizationPercentage: 70
 
 # ── Postgres ───────────────────────────────────────
 postgres:
-  enabled: true
-  image: "postgres:16"
-  storage: "1Gi"
-  user: "user"
-  password: "password"
-  db: "lms_db"
-  resources:
-    requests:
-      memory: "128Mi"
-      cpu: "100m"
-    limits:
-      memory: "256Mi"
-      cpu: "500m"
+  enabled: false
 
 # ── RabbitMQ ───────────────────────────────────────
 rabbitmq:
   image: "rabbitmq:3-management"
-  user: "guest"
-  password: "guest"
   resources:
     requests:
       memory: "256Mi"
@@ -132,16 +119,4 @@ rabbitmq:
 
 # ── Redis ───────────────────────────────────────
 redis:
-  enabled: true
-  image: "redis:7.2-alpine"
-  resources:
-    requests:
-      memory: "32Mi"
-      cpu: "25m"
-    limits:
-      memory: "64Mi"
-      cpu: "200m"
-
-# ── External Secrets Operator ──────────────────
-eso:
   enabled: false

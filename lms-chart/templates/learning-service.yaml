@@ -7,23 +7,10 @@ metadata:
     {{- include "lms.labels" . | nindent 4 }}
 data:
   SPRING_DATASOURCE_URL: {{ .Values.learningService.datasourceUrl | quote }}
-  SPRING_DATA_REDIS_HOST: "redis"
-  SPRING_DATA_REDIS_PORT: "6379"
+  SPRING_DATA_REDIS_HOST: {{ .Values.global.redis.host | quote }}
+  SPRING_DATA_REDIS_PORT: {{ .Values.global.redis.port | quote }}
   EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: {{ .Values.eurekaUrl | quote }}
   SPRING_RABBITMQ_HOST: "rabbitmq"
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: learning-service-secret
-  namespace: {{ include "lms.namespace" . }}
-type: Opaque
-stringData:
-  SPRING_DATASOURCE_USERNAME: {{ .Values.postgres.user | quote }}
-  SPRING_DATASOURCE_PASSWORD: {{ .Values.postgres.password | quote }}
-  JWT_SECRET: {{ .Values.jwtSecret | quote }}
-  SPRING_RABBITMQ_USERNAME: {{ .Values.rabbitmq.user | quote }}
-  SPRING_RABBITMQ_PASSWORD: {{ .Values.rabbitmq.password | quote }}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -46,21 +33,26 @@ spec:
     metadata:
       labels:
         app: learning-service
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/actuator/prometheus"
+        prometheus.io/port: "8083"
     spec:
       initContainers:
         - name: wait-for-deps
           image: busybox:1.36
-          command: ['sh', '-c', 'until nc -z postgres-db 5432 && nc -z redis 6379 && nc -z eureka-server 8761 && nc -z rabbitmq 5672; do sleep 3; done']
+          command: ['sh', '-c', 'until nc -z {{ .Values.global.postgres.host }} 5432 && nc -z {{ .Values.global.redis.host }} 6379 && nc -z eureka-server 8761 && nc -z rabbitmq 5672; do sleep 3; done']
       containers:
         - name: learning-service
           image: {{ .Values.global.imageRegistry }}/{{ .Values.learningService.image }}:{{ .Values.global.imageTag }}
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
           ports:
-              - containerPort: {{ .Values.learningService.port }}
+            - containerPort: {{ .Values.learningService.port }}
           envFrom:
             - configMapRef:
                 name: learning-service-config
             - secretRef:
-                name: learning-service-secret
+                name: lms-secrets
           resources:
             {{- toYaml .Values.learningService.resources | nindent 12 }}
           readinessProbe:
@@ -74,10 +66,9 @@ spec:
             httpGet:
               path: /actuator/health
               port: {{ .Values.learningService.port }}
-            initialDelaySeconds: 90
+            initialDelaySeconds: 120
             periodSeconds: 15
 ---
-
 apiVersion: v1
 kind: Service
 metadata:

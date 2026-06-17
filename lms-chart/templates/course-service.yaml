@@ -7,15 +7,16 @@ metadata:
     {{- include "lms.labels" . | nindent 4 }}
 data:
   SPRING_DATASOURCE_URL: {{ .Values.courseService.datasourceUrl | quote }}
-  SPRING_DATA_REDIS_HOST: "redis"
-  SPRING_DATA_REDIS_PORT: "6379"
+  SPRING_DATA_REDIS_HOST: {{ .Values.global.redis.host | quote }}
+  SPRING_DATA_REDIS_PORT: {{ .Values.global.redis.port | quote }}
   EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: {{ .Values.eurekaUrl | quote }}
   SPRING_RABBITMQ_HOST: "rabbitmq"
+{{- if not .Values.eso.enabled }}
 ---
 apiVersion: v1
 kind: Secret
 metadata:
-  name: course-service-secret
+  name: lms-secrets
   namespace: {{ include "lms.namespace" . }}
 type: Opaque
 stringData:
@@ -24,6 +25,7 @@ stringData:
   JWT_SECRET: {{ .Values.jwtSecret | quote }}
   SPRING_RABBITMQ_USERNAME: {{ .Values.rabbitmq.user | quote }}
   SPRING_RABBITMQ_PASSWORD: {{ .Values.rabbitmq.password | quote }}
+{{- end }}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -46,21 +48,26 @@ spec:
     metadata:
       labels:
         app: course-service
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/actuator/prometheus"
+        prometheus.io/port: "8082"
     spec:
       initContainers:
         - name: wait-for-deps
           image: busybox:1.36
-          command: ['sh', '-c', 'until nc -z postgres-db 5432 && nc -z redis 6379 && nc -z eureka-server 8761 && nc -z rabbitmq 5672; do sleep 3; done']
+          command: ['sh', '-c', 'until nc -z {{ .Values.global.postgres.host }} 5432 && nc -z {{ .Values.global.redis.host }} 6379 && nc -z eureka-server 8761 && nc -z rabbitmq 5672; do sleep 3; done']
       containers:
         - name: course-service
           image: {{ .Values.global.imageRegistry }}/{{ .Values.courseService.image }}:{{ .Values.global.imageTag }}
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
           ports:
-              - containerPort: {{ .Values.courseService.port }}
+            - containerPort: {{ .Values.courseService.port }}
           envFrom:
             - configMapRef:
                 name: course-service-config
             - secretRef:
-                name: course-service-secret
+                name: lms-secrets
           resources:
             {{- toYaml .Values.courseService.resources | nindent 12 }}
           readinessProbe:
@@ -74,10 +81,9 @@ spec:
             httpGet:
               path: /actuator/health
               port: {{ .Values.courseService.port }}
-            initialDelaySeconds: 90
+            initialDelaySeconds: 120
             periodSeconds: 15
 ---
-
 apiVersion: v1
 kind: Service
 metadata:

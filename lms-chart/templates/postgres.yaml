@@ -1,3 +1,4 @@
+{{- if .Values.postgres.enabled }}
 apiVersion: v1
 kind: Secret
 metadata:
@@ -67,6 +68,8 @@ spec:
                 - {{ .Values.postgres.user }}
             initialDelaySeconds: 30
             periodSeconds: 15
+            failureThreshold: 5
+            timeoutSeconds: 5
           volumeMounts:
             - name: postgres-storage
               mountPath: /var/lib/postgresql/data
@@ -87,3 +90,4 @@ spec:
   ports:
     - port: 5432
       targetPort: 5432
+{{- end }}

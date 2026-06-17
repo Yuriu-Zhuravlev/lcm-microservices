@@ -18,6 +18,7 @@ spec:
       containers:
         - name: eureka-server
           image: {{ .Values.global.imageRegistry }}/eureka-server:{{ .Values.global.imageTag }}
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
           ports:
               - containerPort: 8761
           env:

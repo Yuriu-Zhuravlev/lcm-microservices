@@ -205,7 +205,7 @@ Spring Cloud Netflix Eureka registry. All services register on startup; the Gate
 | Layer              | Technology                                                                                                                                     |
 |--------------------|------------------------------------------------------------------------------------------------------------------------------------------------|
 | Language           | Java 21                                                                                                                                        |
-| Framework          | Spring Boot 4, Spring Cloud                                                                                                                    |
+| Framework          | Spring Boot 4, Spring Cloud, Resilience4j (Circuit Breaker)                                                                                    |
 | API Gateway        | Spring Cloud Gateway MVC                                                                                                                       |
 | Security           | Spring Security + JWT (JJWT)                                                                                                                   |
 | Service Discovery  | Netflix Eureka                                                                                                                                 |
@@ -214,8 +214,9 @@ Spring Cloud Netflix Eureka registry. All services register on startup; the Gate
 | Database           | PostgreSQL + Flyway migrations                                                                                                                 |
 | Inter-service HTTP | OpenFeign                                                                                                                                      |
 | API Docs           | SpringDoc OpenAPI 3 (Swagger)                                                                                                                  |
-| Containerization   | Docker, Docker Compose                                                                                                                         |
-| CI/CD              | GitHub Actions → GHCR                                                                                                                          |
+| Containerization   | Docker, Docker Compose, K8S                                                                                                                    |
+| CI/CD              | GitHub Actions → GHCR (GitHub Container Registry)                                                                                              |
+| Cloud / DevOps     | AWS (EKS, RDS, ElastiCache, Secrets Manager), Helm, Prometheus & Grafana, HPA                                                                  |
 | Testing            | JUnit 5, Mockito, Spring Boot Test, MockMvc (`@WebMvcTest`), `@DataJpaTest`, `@SpringBootTest`, Testcontainers (PostgreSQL · Redis · RabbitMQ) |
 
 ---
@@ -228,9 +229,12 @@ Spring Cloud Netflix Eureka registry. All services register on startup; the Gate
 
 **Redis caching reduces latency.** Frequently accessed data (user lookups, course queries, enrollment lists) is cached with a 1-hour TTL and evicted on write operations using `@CacheEvict`.
 
-**Shared DB, isolated schemas.** All services use the same PostgreSQL instance but different schemas (`auth_schema`, `courses_schema`, `learning_schema`). This simplifies local setup while preserving logical separation.
-
+**Shared DB, isolated schemas — a conscious tradeoff.** All services use the same PostgreSQL instance but different schemas. While preserving logical separation at the data layer, this decision directly maps to optimizing cloud costs on AWS, allowing the entire system to run efficiently on a single managed **AWS RDS (db.t3.micro)** instance within the Free Tier.
 **Flyway manages schema migrations.** The Course and Learning services use versioned SQL migrations instead of Hibernate `ddl-auto`, making schema changes trackable and reversible.
+
+**Fault Tolerance via Resilience4j Circuit Breaker.** To prevent cascading failures across the system, OpenFeign clients (e.g., inter-service communication between `Learning Service`, `Course Service`, and `Auth Service`) and `API Gateway` are protected by Resilience4j Circuit Breakers. If a downstream service fails or times out, the circuit opens, preventing network congestion and immediately falling back to a degraded state (or cached data) instead of hanging user requests.
+
+**Cloud-native production configuration.** The application profiles are separated between local development (`docker-compose`) and cloud deployment. In production (**AWS EKS**), all sensitive credentials (DB passwords, JWT secrets, RabbitMQ credentials) are decoupled from the code entirely and injected dynamically into Spring Boot pods via the **External Secrets Operator (ESO)** from **AWS Secrets Manager**.
 
 ---
 
@@ -249,6 +253,15 @@ Writing `@DataJpaTest`, `@WebMvcTest`, and full `@SpringBootTest` integration te
 
 **Redis caching is easy to add and easy to get wrong.**
 Adding `@Cacheable` takes five minutes. Figuring out when to evict — and making sure `@CacheEvict` fires on every write path, including edge cases — takes much longer. I learned that caching is a consistency problem first and a performance optimization second.
+
+**Cascading failures are real, and boundaries must be guarded.**
+Adding Resilience4j taught me that a distributed system is only as strong as its weakest link. Initially, an outage or lag in the `Course Service` could freeze threads in the `Learning Service` due to synchronous OpenFeign calls. Implementing Circuit Breakers made me shift from a "hope for the best" mindset to designing for graceful degradation. I learned how to configure threshold metrics (failure rates, slow call rates) and write meaningful fallback methods that keep the user experience intact even when a partial outage occurs.
+
+**Moving from Local Containers to Cloud Production.**
+Deploying the platform to **AWS EKS** changed my perspective on backend development. I learned that writing efficient Java code is only half the battle; the other half is understanding how your services behave in a live cloud environment. Configuring **Horizontal Pod Autoscaling (HPA)** to handle load, isolating sensitive credentials using **AWS Secrets Manager**, and setting up production-grade monitoring via **Prometheus & Grafana** to track cluster health taught me how to bridge the gap between a local Spring Boot application and a secure, observable cloud deployment.
+
+**The Power of Declarative Deployments with Helm.**
+Deploying microservices manually using raw Kubernetes manifests quickly becomes unmanageable. By adopting **Helm**, I learned how to package, version, and manage the entire application lifecycle declaratively. Templateizing configurations for different environments, managing complex dependency graphs (like deploying our services alongside the External Secrets Operator), and executing clean rollbacks taught me how to manage cloud-native applications at scale, steering away from manual `kubectl` operations toward production-ready deployment workflows.
 
 ---
 
@@ -311,4 +324,136 @@ lcm-microservices/
 ├── api-gateway/         # Routing, JWT pre-validation, Swagger aggregation
 ├── eureka-server/       # Service registry
 └── docker-compose.yml   # Full local setup
+```
+
+---
+
+# AWS Deployment
+
+## Architecture
+
+```
+                         ┌─────────────────────────────────────────┐
+                         │           AWS eu-central-1              │
+                         │                                         │
+Internet ──────────────► │  ALB (Application Load Balancer)        │
+                         │         │                               │
+                         │  ┌──────▼──────────────────────────┐   │
+                         │  │        EKS Cluster               │   │
+                         │  │                                  │   │
+                         │  │  api-gateway (LoadBalancer/ALB)  │   │
+                         │  │         │                        │   │
+                         │  │  ┌──────┼──────┐                │   │
+                         │  │  │      │      │                │   │
+                         │  │ auth course learning            │   │
+                         │  │                                  │   │
+                         │  │  eureka-server                   │   │
+                         │  │  rabbitmq (self-managed)         │   │
+                         │  │  Prometheus + Grafana + Loki     │   │
+                         │  │                                  │   │
+                         │  └──────────────────────────────────┘   │
+                         │         │              │                 │
+                         │  ┌──────▼──────┐  ┌───▼────────────┐   │
+                         │  │     RDS     │  │  ElastiCache   │   │
+                         │  │ PostgreSQL  │  │    Redis       │   │
+                         │  │ db.t3.micro │  │ cache.t3.micro │   │
+                         │  │ (Free Tier) │  │  (Free Tier)   │   │
+                         │  └─────────────┘  └────────────────┘   │
+                         └─────────────────────────────────────────┘
+```
+
+## Infrastructure
+
+| Component | AWS Service | Type | Cost |
+|---|---|---|---|
+| K8s cluster | EKS | Control plane | ~$72/mo |
+| Worker nodes | EC2 t3.medium Spot | 3 nodes | ~$12-18/mo |
+| Load Balancer | ALB | Ingress | ~$16/mo |
+| Database | RDS PostgreSQL db.t3.micro | Managed | Free Tier |
+| Cache | ElastiCache Redis cache.t3.micro | Managed | Free Tier |
+| Container Registry | GHCR (GitHub) | - | Free |
+| **Total (active)** | | | **~$100-106/mo** |
+| **Total (nodes scaled to 0)** | | | **~$15-20/mo** |
+
+## Secrets Management
+
+All sensitive credentials (DB password, JWT secret, RabbitMQ credentials) are stored in **AWS Secrets Manager** and injected into pods at runtime via **External Secrets Operator (ESO)**.
+
+```
+AWS Secrets Manager (/lms/prod-secrets)
+        │
+        ▼
+External Secrets Operator
+        │
+        ▼
+K8s Secret (lms-secrets)
+        │
+        ▼
+  Spring Boot pods (via envFrom)
+```
+
+No secrets are stored in Git or Helm values files.
+
+## Screenshots
+
+### EKS Cluster
+![EKS Cluster](docs/aws/eks-cluster.png)
+> AWS Console → EKS → lms-cluster. Shows 3 managed Spot nodes, K8s version 1.34.
+
+### EKS Nodes
+![EKS Nodes](docs/aws/eks-nodes.png)
+> kubectl get nodes — all nodes in Ready state.
+
+### Running Pods
+![Running Pods](docs/aws/pods-running.png)
+> kubectl get pods -n lms — all microservices running with HPA active.
+
+### RDS PostgreSQL
+![RDS](docs/aws/rds.png)
+> AWS Console → RDS → lms-postgres. Status: Available, db.t3.micro, Free Tier.
+
+### ElastiCache Redis
+![ElastiCache](docs/aws/elasticache.png)
+> AWS Console → ElastiCache → lms-redis. Status: Available, cache.t3.micro, Free Tier.
+
+### AWS Secrets Manager
+![Secrets Manager](docs/aws/secrets-manager.png)
+> AWS Console → Secrets Manager → /lms/prod-secrets. All credentials stored securely.
+
+### External Secrets Operator
+![ESO](docs/aws/eso-synced.png)
+> kubectl get externalsecret -n lms — SecretSynced: True.
+
+### ALB Endpoint — API Health Check
+![ALB Health](docs/aws/alb-health.png)
+> GET /actuator/health → 200 OK, status: UP. Public ALB endpoint.
+
+### API — Postman
+![Postman](docs/aws/postman-api-register.png)
+![Postman](docs/aws/postman-api-login.png)
+![Postman](docs/aws/postman-api-courses.png)
+> Successful API call through ALB endpoint (register/login/courses).
+
+### Grafana Dashboard
+![Grafana](docs/aws/grafana-dashboard.png)
+> Grafana accessible via ALB. JVM memory, HTTP requests, HikariCP metrics visible.
+
+### Prometheus Targets
+![Prometheus Targets](docs/aws/prometheus-targets.png)
+> All LMS microservices scraped by Prometheus via pod annotations.
+
+### HPA
+![HPA](docs/aws/hpa.png)
+> kubectl get hpa -n lms — HPA active for all services.
+
+## Cluster Management
+```bash
+# Scale down nodes when not in use (save ~$30/mo, pay only $72 for control plane)
+eksctl scale nodegroup --cluster=lms-cluster --name=lms-nodes --nodes=0 --region eu-central-1
+ 
+# Scale up
+eksctl scale nodegroup --cluster=lms-cluster --name=lms-nodes --nodes=3 --region eu-central-1
+ 
+# Delete cluster completely (pay $0)
+eksctl delete cluster --name=lms-cluster --region eu-central-1
 ```
